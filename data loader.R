@@ -53,7 +53,7 @@ load_network = function(network, output = 'network', vlist = NULL, directed = F)
                                yes = FALSE, no = TRUE
         ) # Create bipartite division between the nodes
         if (output == 'network'){
-          return(snafun::to_network(net, bipartite = T))
+          return(snafun::to_network(snafun::to_matrix(net), bipartite = T))
         } else if (output == 'igraph'){
           return(net)
         }
@@ -67,7 +67,7 @@ load_network = function(network, output = 'network', vlist = NULL, directed = F)
     } else{
       # Incidence matrix (mxn)
       if (output == 'network'){
-        return(snafun::to_network(igraph::graph_from_incidence_matrix(network, directed = directed, mode = 'out')))
+        return(snafun::to_network(igraph::graph_from_incidence_matrix(network, directed = directed, mode = 'out'), bipartite = T))
       } else if (output == 'igraph'){
         return(igraph::graph_from_incidence_matrix(network, directed = directed, mode = 'out'))
       }
@@ -91,5 +91,5 @@ apollo_network_from_excel = function(directory = NULL, sheet_number = 1, type = 
 }
 
 plot(network_from_excel())
-
 apollo_network_from_excel(type = 'network')
+
