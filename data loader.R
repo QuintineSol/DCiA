@@ -13,6 +13,7 @@ load_network = function(network, output = 'network', vlist = NULL, directed = F)
   #' output: Defines which output is generated. Can be either 'network' (default) or 'igraph'
   #' vlist (optional): List of all vertices to provide when providing an edge list
   #' directed (optional): Whether the network is directed or not (default is undirected)
+  
   if (snafun::is_igraph(network)){
     # igraph
     if (output == 'network'){
@@ -75,21 +76,80 @@ load_network = function(network, output = 'network', vlist = NULL, directed = F)
   }
 }
 
-apollo_network_from_excel = function(directory = NULL, sheet_number = 1, type = 'igraph'){
-  #' A function to easily load the apollo dataset into an igraph or network object
+apollo_network_from_excel = function(directory = NULL, sheet = c('attributes', 'knowledge', 'co-author', 'grants_people', 'grants'), type = 'igraph'){
+  #' A function to easily load the Apollo dataset into an igraph or network object (test)
   #'
-  #' There multiple different parameters which can be defined:
-  #' directory (optional): directory of the file. If empty, file will be searched for in working directory
-  #' sheet_number (optional): sheet number which must be imported. If empty, will be equal to the first sheet
+  #' There multiple different parameters which can be defined: 
+  #' directory (optional): directory of the file. If empty, file will be searched for in the data folder within the directory of this file
+  #' sheet: sheet type which must be imported. Has to be one of the following:
+  #' - attributes: Collects the attributes of all the nodes based on Attribute table_Final.xlsx and returns them in 3 separate tables including added explanation
+  #' - knowledge: Returns the knowledge network
+  #' - co-author: Returns the co-authorship network
+  #' - grants_people: Returns the unipartite projection of the grant network
+  #' - grants: Returns the bipartite grant network
   #' type: Defines which output is generated. Can be either 'network' or 'igraph' (default)
+  suppressWarnings({
+  match.arg(sheet)
   
-  if (!is.null(directory)){
-    return(load_network(as.matrix(readxl::read_excel(directory, sheet = sheet_number)), output = type))
+  file_names = c('attributes' = 'Attribute table_Final.xlsx',
+                 'knowledge' = 'knowledge_sharing_people_to_people.csv',
+                 'co-author' = 'co_authorship_people_to_people.csv',
+                 'grants_people' = 'grants_people_to_people.csv',
+                 'grants' = 'grants_people_to_grant application.csv')
+  
+  if (sheet != 'attributes'){
+    if (!is.null(directory)){
+      return(load_network(as.matrix(read.csv(paste0(directory,'/', file_names[sheet]), sheet = sheet_number)), output = type))
+    } else{
+      return(load_network(as.matrix(read.csv(paste0(dirname(rstudioapi::getSourceEditorContext()$path), '/Data/', file_names[sheet]))), output = type))
+    }
   } else{
-    return(load_network(as.matrix(readxl::read_excel(paste0(getwd(), '/Apollo_Student_Data 2024.xlsx'), sheet = sheet_number)), output = type))
+    if (is.null(directory)){
+      temp = as.data.frame(readxl::read_xlsx(paste0(dirname(rstudioapi::getSourceEditorContext()$path), 
+                                                    '/Data/', file_names[sheet]), col_types = 'text'))
+      temp2 = as.data.frame(readxl::read_xlsx(paste0(dirname(rstudioapi::getSourceEditorContext()$path), 
+                                                     '/Data/', file_names[sheet]), col_types = 'text', sheet = 2, col_names = F))
+    } else{
+      temp = as.data.frame(readxl::read_xlsx(paste0(directory, 
+                                                    '/', file_names[sheet]), col_types = 'text'))
+      temp2 = as.data.frame(readxl::read_xlsx(paste0(directory, 
+                                                     '/', file_names[sheet]), col_types = 'text', sheet = 2, col_names = F))
+    }
+    person_start = rownames(temp[which(as.integer(temp$Node)>999999)[1],])
+    doi_start = rownames(temp[which(is.na(as.integer(temp$Node)))[1],])
+    paper_table = temp[doi_start:nrow(temp),]
+    people_table = temp[person_start:doi_start,]
+    grant_table = temp[1:person_start,]
+    
+    faculty_dct = setNames(temp2[2:5, '...1'], temp2[2:5, '...2'])
+    PI_dct = setNames(temp2[c(9,10), '...1'], temp2[c(9,10), '...2'])
+    staff_dct = setNames(temp2[c(2,3), '...5'], temp2[c(2,3), '...6'])
+    grant_dct = setNames(temp2[c(9,10), '...5'], temp2[c(9,10), '...6'])
+    explenations = temp2[which(!is.na(temp2$...9)), c('...8', '...9')]
+    colnames(explenations) = c('Term', 'Definition')
+    
+    grant_table = grant_table[, c('Node', 'Grant Application Academic Year', 'Grant Awarded')]
+    grant_table$`Grant Awarded` = grant_dct[grant_table$`Grant Awarded`]
+    grant_table$Node = as.integer(grant_table$Node)
+    grant_table$`Grant Awarded` = as.factor(grant_table$`Grant Awarded`)
+    
+    people_table = people_table[, !names(people_table) %in% c('Grant Application Academic Year', 'Grant Awarded', 'DOI Year')]
+    people_table$`PI/Not a PI` = PI_dct[people_table$`PI/Not a PI`]
+    people_table$Faculty = faculty_dct[people_table$Faculty]
+    people_table$Faculty[is.na(people_table$Faculty)] = 'External Faculty'
+    people_table$`Internal Staff vs. External Staff` = staff_dct[people_table$`Internal Staff vs. External Staff`]
+    people_table$Node = as.integer(people_table$Node)
+    people_table$Faculty = as.factor(people_table$Faculty)
+    people_table$`PI/Not a PI` = as.factor(people_table$`PI/Not a PI`)
+    people_table$`Internal Staff vs. External Staff` = as.factor(people_table$`Internal Staff vs. External Staff`)
+    
+    
+    paper_table = paper_table[,c('Node', 'DOI Year')]
+    paper_table$`DOI Year` = as.integer(paper_table$`DOI Year`)
+    return(list('paper_table' = paper_table, 'people_table' = people_table, 'grant_table' = grant_table, 'explanations' = explenations))
   }
+  })
 }
 
-plot(network_from_excel())
-apollo_network_from_excel(type = 'network')
 
+apollo_network_from_excel(sheet= 'co-author', type = 'network')
