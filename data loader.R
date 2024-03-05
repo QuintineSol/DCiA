@@ -80,7 +80,7 @@ apollo_network_from_excel = function(directory = NULL, sheet = c('attributes', '
   #' A function to easily load the Apollo dataset into an igraph or network object (test)
   #'
   #' There multiple different parameters which can be defined: 
-  #' directory (optional): directory of the file. If empty, file will be searched for in the data folder within the directory of this file
+  #' directory (optional): directory of the excel files. If empty, file will be searched for in the data folder within the directory of this file
   #' sheet: sheet type which must be imported. Has to be one of the following:
   #' - attributes: Collects the attributes of all the nodes based on Attribute table_Final.xlsx and returns them in 3 separate tables including added explanation
   #' - knowledge: Returns the knowledge network
