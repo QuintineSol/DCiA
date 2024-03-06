@@ -13,5 +13,5 @@ Go to Projects > SCRUM board
 4. Work on task
 5. Create pull request
 6. Add "Closes #<task-number>" in the description where you replace <task-number> with the number of your task (which can be found on the SCRUM board)
-7. Merge pull request (then the task is automatically moved to "Done" on the SCRUM board)
-8. Delete branch
+7. Someone else reviews the code and merges the pull request (then the task is automatically moved to "Done" on the SCRUM board)
+9. Delete branch
