@@ -152,4 +152,17 @@ apollo_network_from_excel = function(directory = NULL, sheet = c('attributes', '
 }
 
 
-apollo_network_from_excel(sheet= 'co-author', type = 'network')
+graph_co_author = apollo_network_from_excel(sheet= 'co-author', type = 'igraph')
+for (network in c('knowledge', 'co-author', 'grants_people', 'grants')){
+  assign(ifelse(network == 'co-author',paste0('network_', 'co-author'), paste0('network_', network)), apollo_network_from_excel(sheet = network, type = 'network'))
+  assign(ifelse(network == 'co-author',paste0('graph_', 'co-author'), paste0('graph_', network)), apollo_network_from_excel(sheet = network, type = 'igraph'))
+}
+attributes = apollo_network_from_excel(sheet = 'attributes')
+paper_table = attributes[[1]]
+people_table = attributes[[2]]
+grant_table = attributes[[3]]
+explanations = attributes[[4]]
+
+save(network_co_author, network_grants, network_grants_people, network_knowledge, file = 'networks.RData')
+save(graph_co_author, graph_grants, graph_grants_people, graph_knowledge, file = 'graphs.RData')
+save(paper_table, people_table, grant_table,explanations, file = 'explanations.RData')
