@@ -99,7 +99,7 @@ apollo_network_from_excel = function(directory = NULL, sheet = c('attributes', '
   
   if (sheet != 'attributes'){
     if (!is.null(directory)){
-      return(load_network(as.matrix(read.csv(paste0(directory,'/', file_names[sheet]), sheet = sheet_number)), output = type))
+      return(load_network(as.matrix(read.csv(paste0(directory,'/', file_names[sheet]))), output = type))
     } else{
       return(load_network(as.matrix(read.csv(paste0(dirname(rstudioapi::getSourceEditorContext()$path), '/Data/', file_names[sheet]))), output = type))
     }
@@ -154,8 +154,19 @@ apollo_network_from_excel = function(directory = NULL, sheet = c('attributes', '
 
 graph_co_author = apollo_network_from_excel(sheet= 'co-author', type = 'igraph')
 for (network in c('knowledge', 'co-author', 'grants_people', 'grants')){
-  assign(ifelse(network == 'co-author',paste0('network_', 'co-author'), paste0('network_', network)), apollo_network_from_excel(sheet = network, type = 'network'))
-  assign(ifelse(network == 'co-author',paste0('graph_', 'co-author'), paste0('graph_', network)), apollo_network_from_excel(sheet = network, type = 'igraph'))
+  assign(ifelse(network == 'co-author',paste0('network_', 'co_author'), paste0('network_', network)), apollo_network_from_excel(sheet = network, type = 'network'))
+  assign(ifelse(network == 'co-author',paste0('graph_', 'co_author'), paste0('graph_', network)), apollo_network_from_excel(sheet = network, type = 'igraph'))
+  plot(eval(parse(text = ifelse(network == 'co-author',paste0('network_', 'co_author'), paste0('network_', network)))), main = network)
+  plot(eval(parse(text = ifelse(network == 'co-author',paste0('graph_', 'co_author'), paste0('graph_', network)))), main = network, 
+       vertex.size = 5,
+       edge.size =4/32,
+       edge.arrow.size = 0.2,
+       vertex.color = ifelse(rep(all(is.na(igraph::V(eval(parse(text = ifelse(network == 'co-author',paste0('graph_', 'co_author'), paste0('graph_', network)))))$type)), times = igraph::vcount(eval(parse(text = ifelse(network == 'co-author',paste0('graph_', 'co_author'), paste0('graph_', network)))))),'orange',ifelse(igraph::V(graph_grants)$type,"navy", 'red')), 
+       vertex.label.cex = 0.4,
+       vertex.label.color = 'black',
+       vertex.frame.color = "#ffffff",
+       vertex.label = NA,
+       layout = igraph::layout.fruchterman.reingold)
 }
 attributes = apollo_network_from_excel(sheet = 'attributes')
 paper_table = attributes[[1]]
@@ -163,6 +174,33 @@ people_table = attributes[[2]]
 grant_table = attributes[[3]]
 explanations = attributes[[4]]
 
+graph_grants_people = igraph::union(apollo_network_from_excel(sheet = 'grants_people'), igraph::bipartite.projection(graph_grants)$proj1)
+network_grants_people = intergraph::asNetwork(graph_grants_people)
+
 save(network_co_author, network_grants, network_grants_people, network_knowledge, file = 'networks.RData')
 save(graph_co_author, graph_grants, graph_grants_people, graph_knowledge, file = 'graphs.RData')
 save(paper_table, people_table, grant_table,explanations, file = 'explanations.RData')
+
+# Isolates in grants looking for the issue
+
+igraph:graph_grants
+igraph::V(graph_grants_people)$color
+snafun::v_degree(graph_grants)[snafun::v_degree(graph_grants) == 1]
+
+igraph::V(igraph::bipartite.projection(graph_grants)$proj1)[!igraph::V(igraph::bipartite.projection(graph_grants)$proj1) %in% igraph::V(graph_grants_people)]
+igraph::E(graph_grants_people)[!igraph::E(graph_grants_people) %in% igraph::E(graph_grants2)]
+
+igraph::bipartite.projection(graph_grants2)$proj1
+igraph::E(graph_grants2)[igraph::E(graph_grants2) == 62144110]
+igraph::bipartite.projection(igraph::induced.subgraph(graph_grants2, vids = c('62144110', '56185396', '764834')))$proj1
+load_network(as.matrix(read.csv(paste0(dirname(rstudioapi::getSourceEditorContext()$path), '/Data/', 'grants_people_to_grant application.csv'))), output = 'igraph')
+snafun::v_degree(graph_grants2)['62144110']
+
+snafun::v_degree(igraph::bipartite.projection(graph_grants2)$proj1)['56185396']
+igraph::E(graph_grants_people)
+igraph::E(igraph::bipartite.projection(graph_grants2)$proj1)
+igraph::E(igraph::bipartite.projection(graph_grants2)$proj1)[.from(match(77795114, igraph::V(igraph::bipartite.projection(graph_grants2)$proj1)$name))]
+igraph::E(graph_grants_people)[.from(match(77795114, igraph::V(graph_grants_people)$name))]
+
+
+igraph::difference(snafun::remove_loops(graph_grants_people), igraph::bipartite.projection(graph_grants2)$proj1)
