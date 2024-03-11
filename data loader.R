@@ -115,11 +115,11 @@ apollo_network_from_excel = function(directory = NULL, sheet = c('attributes', '
       temp2 = as.data.frame(readxl::read_xlsx(paste0(directory, 
                                                      '/', file_names[sheet]), col_types = 'text', sheet = 2, col_names = F))
     }
-    person_start = rownames(temp[which(as.integer(temp$Node)>999999)[1],])
-    doi_start = rownames(temp[which(is.na(as.integer(temp$Node)))[1],])
+    person_start = as.numeric(rownames(temp[which(as.integer(temp$Node)>999999)[1],]))
+    doi_start = as.numeric(rownames(temp[which(is.na(as.integer(temp$Node)))[1],]))
     paper_table = temp[doi_start:nrow(temp),]
-    people_table = temp[person_start:doi_start,]
-    grant_table = temp[1:person_start,]
+    people_table = temp[person_start:(doi_start-1),]
+    grant_table = temp[1:(person_start-1),]
     
     faculty_dct = setNames(temp2[2:5, '...1'], temp2[2:5, '...2'])
     PI_dct = setNames(temp2[c(9,10), '...1'], temp2[c(9,10), '...2'])
@@ -199,8 +199,9 @@ snafun::v_degree(graph_grants2)['62144110']
 snafun::v_degree(igraph::bipartite.projection(graph_grants2)$proj1)['56185396']
 igraph::E(graph_grants_people)
 igraph::E(igraph::bipartite.projection(graph_grants2)$proj1)
-igraph::E(igraph::bipartite.projection(graph_grants2)$proj1)[.from(match(77795114, igraph::V(igraph::bipartite.projection(graph_grants2)$proj1)$name))]
+igraph::E(igraph::bipartite.projection(graph_grants)$proj1)[.from(match(77795114, igraph::V(igraph::bipartite.projection(graph_grants)$proj1)$name))]
 igraph::E(graph_grants_people)[.from(match(77795114, igraph::V(graph_grants_people)$name))]
 
 
 igraph::difference(snafun::remove_loops(graph_grants_people), igraph::bipartite.projection(graph_grants2)$proj1)
+

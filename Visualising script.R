@@ -201,3 +201,99 @@ plot(combination_graph,
      vertex.label.color = 'blue',
      vertex.frame.color = "#ffffff",
      layout = igraph::layout_with_graphopt)
+
+
+sort(snafun::v_betweenness(graph_co_author, directed = F),decreasing = T)
+plot(graph_co_author,
+     vertex.size = igraph::betweenness(graph_co_author, directed = F)/50000,
+     edge.size =2,
+     edge.width = 1,
+     vertex.color = 'cyan',
+     edge.arrow.size = 0.8,
+     edge.color = 'grey80',
+     vertex.label.cex = 0.6,
+     vertex.label.color = ifelse(igraph::V(graph_co_author)$name %in% people_table[people_table$Organisation == 'Internal Staff',]$Node, 'black', 'red'),
+     vertex.frame.color = "#ffffff",
+     layout = igraph::layout_with_graphopt)
+
+sort(snafun::v_betweenness(graph_knowledge, directed = F),decreasing = T)
+plot(graph_knowledge,
+     vertex.size = igraph::betweenness(graph_knowledge, directed = F)/5000,
+     edge.size =2,
+     edge.width = 1,
+     vertex.color = 'yellow',
+     edge.color = 'grey80',
+     edge.arrow.size = 0.8,
+     vertex.label.cex = 0.6,
+     vertex.label.color = ifelse(igraph::V(graph_knowledge)$name %in% people_table[people_table$Organisation == 'Internal Staff',]$Node, 'blue', 'cyan'),
+     vertex.frame.color = "#000000",
+     layout = igraph::layout_with_graphopt)
+
+
+igraph::E(graph_grants_people)$weight = 1
+sort(snafun::v_betweenness(graph_grants_people, directed = F),decreasing = T)
+plot(graph_grants_people,
+     vertex.size = igraph::betweenness(graph_grants_people, directed = F)/2500,
+     edge.size =2,
+     edge.width = 1,
+     vertex.color = '#FF00FF',
+     edge.color = 'grey80',
+     edge.arrow.size = 0.8,
+     vertex.label.cex = 0.6,
+     vertex.label.color = ifelse(igraph::V(graph_grants_people)$name %in% people_table[people_table$Organisation == 'Internal Staff',]$Node, 'blue', 'cyan'),
+     vertex.frame.color = "#000000",
+     layout = igraph::layout_with_graphopt)
+
+sum(igraph::V(graph_knowledge)$name %in% people_table[people_table$Organisation == 'Internal Staff',]$Node)
+graph_knowledge
+
+sum(igraph::V(graph_grants_people)$name %in% people_table[people_table$Organisation == 'Internal Staff',]$Node)
+graph_grants_people
+
+igraph::V(staff_net)$faculty = people_table[match(igraph::V(staff_net)$name, people_table$Node),]$Faculty
+from(igraph::E(staff_net))
+
+snafun::make_edgelist(snafun::to_frame(staff_net))
+
+(edge_info = cbind(igraph::as_edgelist(staff_net), as.character(people_table$Faculty[match(igraph::as_edgelist(staff_net)[,1], people_table$Node)]),
+                  as.character(people_table$Faculty[match(igraph::as_edgelist(staff_net)[,2], people_table$Node)])))
+
+table(c(paste(edge_info[,3], edge_info[,4]), paste(edge_info[,4], edge_info[,3])))[c('Digital Design Digital Design', 'Digital Design Marketing', 'Digital Design Music', 'Digital Design Other', 'Marketing Marketing', 'Marketing Music', 'Marketing Other', 'Music Music', 'Music Other')]
+table(people_table$Faculty)
+
+sort(table(c(edge_info[edge_info[,3] != edge_info[,4],1], edge_info[edge_info[,3] != edge_info[,4],2])), decreasing = T)
+sort(table(c(edge_info[edge_info[,3] == edge_info[,4],1], edge_info[edge_info[,3] == edge_info[,4],2])), decreasing = T)
+sort(table(c(edge_info[edge_info[,3] != edge_info[,4],1], edge_info[edge_info[,3] != edge_info[,4],2]))/igraph::degree(staff_net), decreasing = T)
+sort(table(factor(c(edge_info[edge_info[,3] == edge_info[,4],1], edge_info[edge_info[,3] == edge_info[,4],2]), levels = igraph::V(staff_net)$name))/igraph::degree(staff_net))
+
+knowledge_staff_net = igraph::induced.subgraph(graph_knowledge, vids = intersect(as.character(people_table[people_table$Organisation == 'Internal Staff',]$Node), igraph::V(graph_knowledge)$name))
+(edge_info_1 = cbind(igraph::as_edgelist(knowledge_staff_net), as.character(people_table$Faculty[match(igraph::as_edgelist(knowledge_staff_net)[,1], people_table$Node)]),
+                   as.character(people_table$Faculty[match(igraph::as_edgelist(knowledge_staff_net)[,2], people_table$Node)])))
+sort(table(factor(c(edge_info_1[edge_info_1[,3] == edge_info_1[,4],1], edge_info_1[edge_info_1[,3] == edge_info_1[,4],2]), levels = igraph::V(knowledge_staff_net)$name))/igraph::degree(knowledge_staff_net))
+
+co_author_staff_net = igraph::induced.subgraph(graph_co_author, vids = intersect(as.character(people_table[people_table$Organisation == 'Internal Staff',]$Node), igraph::V(graph_co_author)$name))
+(edge_info_2 = cbind(igraph::as_edgelist(co_author_staff_net), as.character(people_table$Faculty[match(igraph::as_edgelist(co_author_staff_net)[,1], people_table$Node)]),
+                   as.character(people_table$Faculty[match(igraph::as_edgelist(co_author_staff_net)[,2], people_table$Node)])))
+sort(table(factor(c(edge_info_2[edge_info_2[,3] == edge_info_2[,4],1], edge_info_2[edge_info_2[,3] == edge_info_2[,4],2]), levels = igraph::V(co_author_staff_net)$name))/igraph::degree(co_author_staff_net))
+
+grants_staff_net = igraph::induced.subgraph(graph_grants_people, vids = intersect(as.character(people_table[people_table$Organisation == 'Internal Staff',]$Node), igraph::V(graph_grants_people)$name))
+(edge_info_3 = cbind(igraph::as_edgelist(grants_staff_net), as.character(people_table$Faculty[match(igraph::as_edgelist(grants_staff_net)[,1], people_table$Node)]),
+                   as.character(people_table$Faculty[match(igraph::as_edgelist(grants_staff_net)[,2], people_table$Node)])))
+sort(table(factor(c(edge_info_3[edge_info_3[,3] == edge_info_3[,4],1], edge_info_3[edge_info_3[,3] == edge_info_3[,4],2]), levels = igraph::V(grants_staff_net)$name))/igraph::degree(grants_staff_net))
+
+plot_df = cbind('grants' = table(factor(c(edge_info_3[edge_info_3[,3] == edge_info_3[,4],1], edge_info_3[edge_info_3[,3] == edge_info_3[,4],2]), levels = igraph::V(grants_staff_net)$name))/igraph::degree(grants_staff_net),
+           'knowledge' = table(factor(c(edge_info_1[edge_info_1[,3] == edge_info_1[,4],1], edge_info_1[edge_info_1[,3] == edge_info_1[,4],2]), levels = igraph::V(knowledge_staff_net)$name))/igraph::degree(knowledge_staff_net),
+           'co_author' = table(factor(c(edge_info_2[edge_info_2[,3] == edge_info_2[,4],1], edge_info_2[edge_info_2[,3] == edge_info_2[,4],2]), levels = igraph::V(co_author_staff_net)$name))/igraph::degree(co_author_staff_net))
+plot_df[sapply(plot_df, is.infinite)] <- NA
+boxplot(plot_df)
+
+# GIVES ERRORS
+people_table$`Internal Staff vs. External Staff` = as.character(people_table$`Internal Staff vs. External Staff`)
+network_knowledge_full = network::add.vertices(intergraph::asNetwork(igraph::simplify(graph_knowledge)), 
+                                               sum(!(as.character(people_table[as.character(people_table$`Internal Staff vs. External Staff`) == 'Internal','Node']) %in% igraph::V(graph_knowledge)$name)), 
+                                               list(
+                                                 vertex.names = 
+                                                   as.character(people_table[as.character(people_table$`Internal Staff vs. External Staff`) == 'Internal',][!(as.character(people_table[as.character(people_table$`Internal Staff vs. External Staff`) == 'Internal',]$Node) %in% igraph::V(graph_knowledge)$name),'Node'])))
+  
+network::add.vertices(intergraph::asNetwork(igraph::simplify(graph_knowledge)),4)%v%
+sna::qaptest(list(network_knowledge, network_grants_people), fun = sna::gcor)
