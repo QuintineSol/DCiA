@@ -1,5 +1,6 @@
 # Load necessary libraries
 library(shiny)
+library(shinydashboard)
 library(DT)          # For data tables
 library(readxl)      # For reading Excel files
 library(shinyAce)    # For the Ace code editor
@@ -11,39 +12,52 @@ library(igraph)      # For network analysis (not explicitly used in provided sni
 Sys.setenv(HUGGINGFACE_API_KEY = "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")
 
 # Define the User Interface
-ui <- navbarPage(
-  "Interactive Data Analysis App", 
-  id = "navbar",
-  
-  # Introduction tab
-  tabPanel("Introduction",
-           fluidPage(
-             wellPanel(
-               h1("Welcome!", align = "center"),
-               h3("Introduction:", align = "center"),
-               p("Welcome to our interdisciplinary collaboration tutorial! This tutorial aims to provide researchers in the fields of digital design, marketing, and music with a user-friendly and non-technical introduction to understanding network data. By exploring the connections and dynamics within your research networks, we hope to empower you to enhance interdisciplinary collaboration and innovation within your respective domains.", style = "text-align: justify; padding: 20px;")
-             )
-           )),
-  
-  # Data upload tab
-  tabPanel("Data Upload",
-           fluidPage(
-             h3("Data Upload Page", align = "center"),
-             fileInput('file1', 'Choose CSV/Excel File', accept = c('.csv', '.xlsx', '.xls')),
-             DT::dataTableOutput("dataTable")  # Renders the uploaded data table
-           )),
-  
-  # Code execution tab
-  tabPanel("Code Execution",
-           fluidPage(
-             h3("Code Execution Page", align = "center"),
-             shinyAce::aceEditor("code", mode = "r", theme = "github", value = "data <- dataset\ni_data <- snafun::to_igraph(data)\nsnafun::g_summary(i_data)"),
-             actionButton("runCode", "Run Code"),  # Button to execute the code in the Ace editor
-             h4("Code Output"),
-             verbatimTextOutput("codeOutput"),  # Area to display the output of executed code
-             h4("Hugging Face Explanation"),
-             textOutput("hfExplanation")  # Area to display the explanation from Hugging Face API
-           ))
+ui <- dashboardPage(
+  dashboardHeader(title = "Apollo"),
+  dashboardSidebar(
+    sidebarMenu(
+      menuItem("Introduction", tabName = "introduction"),
+      menuItem("Data Upload", tabName = "data_upload"),
+      menuItem("Code Execution", tabName = "code_execution")
+    )
+  ),
+  dashboardBody(
+    tabItems(
+      tabItem(tabName = "introduction",
+              fluidRow(
+                column(width = 12,
+                       wellPanel(
+                         h1("Welcome!", align = "center"),
+                         h3("Introduction:", align = "center"),
+                         p("Welcome to our interdisciplinary collaboration tutorial! This tutorial aims to provide researchers in the fields of digital design, marketing, and music with a user-friendly and non-technical introduction to understanding network data. By exploring the connections and dynamics within your research networks, we hope to empower you to enhance interdisciplinary collaboration and innovation within your respective domains.", style = "text-align: justify; padding: 20px;")
+                       )
+                )
+              )
+      ),
+      tabItem(tabName = "data_upload",
+              fluidRow(
+                column(width = 12,
+                       h3("Data Upload Page", align = "center"),
+                       fileInput('file1', 'Choose CSV/Excel File', accept = c('.csv', '.xlsx', '.xls')),
+                       DT::dataTableOutput("dataTable")  # Renders the uploaded data table
+                )
+              )
+      ),
+      tabItem(tabName = "code_execution",
+              fluidRow(
+                column(width = 12,
+                       h3("Code Execution Page", align = "center"),
+                       shinyAce::aceEditor("code", mode = "r", theme = "github", value = "data <- dataset\ni_data <- snafun::to_igraph(data)\nsnafun::g_summary(i_data)"),
+                       actionButton("runCode", "Run Code"),  # Button to execute the code in the Ace editor
+                       h4("Code Output"),
+                       verbatimTextOutput("codeOutput"),  # Area to display the output of executed code
+                       h4("Hugging Face Explanation"),
+                       textOutput("hfExplanation")  # Area to display the explanation from Hugging Face API
+                )
+              )
+      )
+    )
+  )
 )
 
 # Define Server Logic
@@ -130,9 +144,3 @@ server <- function(input, output, session) {
 
 # Run the Shiny application
 shinyApp(ui = ui, server = server)
-
-
-
-
-
-
