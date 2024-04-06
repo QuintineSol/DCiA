@@ -6,7 +6,8 @@ library(readxl)      # For reading Excel files
 library(shinyAce)    # For the Ace code editor
 library(httr)        # For HTTP requests
 library(jsonlite)    # For JSON processing
-library(igraph)      # For network analysis (not explicitly used in provided snippet but may be needed)
+library(igraph)      # For network analysis
+library(intergraph)  # For converting network data
 
 # Setting the Hugging Face API key (ensure this is securely managed in production)
 Sys.setenv(HUGGINGFACE_API_KEY = "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")
@@ -18,7 +19,8 @@ ui <- dashboardPage(
     sidebarMenu(
       menuItem("Introduction", tabName = "introduction"),
       menuItem("Data Upload", tabName = "data_upload"),
-      menuItem("Code Execution", tabName = "code_execution")
+      menuItem("Code Execution", tabName = "code_execution"),
+      menuItem("CUG Test", tabName = "cug_test")
     )
   ),
   dashboardBody(
@@ -55,6 +57,30 @@ ui <- dashboardPage(
                        textOutput("hfExplanation")  # Area to display the explanation from Hugging Face API
                 )
               )
+      ),
+      tabItem(tabName = "cug_test",
+              fluidPage(
+                column(
+                  width = 12,
+                  h3("CUG Test", align = "center"),
+                  p("This page allows you to conduct a CUG (Conditional Uniform Graph) test on your network data. In particular, we will focus on evaluating the betweenness centralization of edges in your network. This helps to assess how much influence certain edges have in connecting different parts of the network."),
+                  p("The Conditional Uniform Graph (CUG) test is a statistical method used to measure the degree of centralization of edges in a network. Centralization refers to the extent to which a network's connectivity is concentrated around a few edges or nodes. In the context of the CUG test, we specifically examine betweenness centrality, which quantifies the importance of individual edges in facilitating communication between other nodes in the network."),
+                  p("By conducting the CUG test, you can gain insights into the structural properties of your network and identify key edges that play a significant role in connecting different components. This information is valuable for understanding the flow of information, identifying potential bottlenecks, and optimizing network efficiency."),
+                  actionButton("runCUG", "Run CUG Test"),
+                  fluidRow(
+                    column(width = 6,
+                           plotOutput("networkPlot", width = "100%", height = "400px")
+                    ),
+                    column(width = 6,
+                           plotOutput("betweennessPlot", width = "100%", height = "400px")
+                    )
+                  ),
+                  h4("CUG Test Results"),
+                  verbatimTextOutput("cugTestOutput"),
+                  h4("Hugging Face Explanation"),
+                  textOutput("hfExplanationCUG")
+                )
+              )
       )
     )
   )
@@ -79,6 +105,48 @@ server <- function(input, output, session) {
   output$dataTable <- DT::renderDataTable({
     req(dataset())  # Ensure dataset is not NULL
     dataset()  # Return the dataset for rendering
+  })
+  
+  # Reactive expression for CUG test
+  cugTest <- eventReactive(input$runCUG, {
+    req(dataset())
+    n <- intergraph::asNetwork(graph_from_data_frame(dataset(), directed = FALSE))
+    # Perform CUG test here
+    cug_test_result <- sna::cug.test(
+      n,  
+      FUN = sna::centralization,
+      FUN.arg = list(FUN = sna::betweenness), 
+      mode = "graph",
+      cmode = "edges",
+      reps = 10,
+      ignore.eval = TRUE
+    )
+    return(cug_test_result)
+  })
+  
+  # Render CUG test results
+  output$cugTestOutput <- renderPrint({
+    req(input$runCUG)
+    print(cugTest())
+  })
+  
+  # Render the explanation text obtained from the Hugging Face API
+  output$hfExplanationCUG <- renderText({
+    explanationOutput()  # Use the existing reactive expression for Hugging Face explanation
+  })
+
+  # Generate network plot before CUG test
+  output$networkPlot <- renderPlot({
+    req(dataset())
+    n <- intergraph::asNetwork(graph_from_data_frame(dataset(), directed = FALSE))
+    plot(n, edge.width = cugTest()$betweenness * 10, edge.color = "blue")
+  })
+  
+  # Generate betweenness centrality plot after CUG test
+  output$betweennessPlot <- renderPlot({
+    req(input$runCUG)
+    req(dataset())
+    barplot(cugTest()$betweenness, names.arg = 1:length(cugTest()$betweenness), main = "Betweenness Centrality")
   })
   
   # Reactive expression to handle API call for generating explanations
@@ -134,11 +202,6 @@ server <- function(input, output, session) {
     }, error = function(e) {
       cat(sprintf("Error in code execution: %s", e$message))
     })
-  })
-  
-  # Render the explanation text obtained from the Hugging Face API
-  output$hfExplanation <- renderText({
-    explanationOutput()  # Use the reactive expression to get the explanation text
   })
 }
 
