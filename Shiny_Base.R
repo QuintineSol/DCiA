@@ -19,7 +19,7 @@ ui <- dashboardPage(
       menuItem("Introduction", tabName = "introduction"),
       menuItem("Data Upload", tabName = "data_upload"),
       menuItem("Code Execution", tabName = "code_execution"),
-      menuItem("CUG Test", tabName = "cug_test")
+      menuItem("CUG Test", tabName = "cug_test"),
       menuItem("Community Detection", tabName = "community_detection")  # New menu item for community detection
     )
   ),
@@ -169,6 +169,7 @@ server <- function(input, output, session) {
   explanationOutput <- eventReactive(input$runCode, {
     req(input$code)  # Ensure code is entered before proceeding
     codeToRun <- input$code
+  })
 
   analysisResult <- eventReactive(input$runAnalysis, {
     req(dataset())
