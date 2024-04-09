@@ -3,25 +3,23 @@ library(shiny)
 library(shinydashboard)
 library(DT)          # For data tables
 library(readxl)      # For reading Excel files
+library(shinyAce)    # For the Ace code editor
 library(httr)        # For HTTP requests
 library(jsonlite)    # For JSON processing
 library(igraph)      # For network analysis (not explicitly used in provided snippet but may be needed)
 library(visNetwork)
-library(intergraph)  # For converting network data
 
-# Securely manage Hugging Face API Key
+# Setting the Hugging Face API key (ensure this is securely managed in production)
 Sys.setenv(HUGGINGFACE_API_KEY = "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")
 
 # Define the User Interface
 ui <- dashboardPage(
-  dashboardHeader(title = "Apollo", titleWidth = 300),
+  dashboardHeader(title = "Apollo"),
   dashboardSidebar(
     sidebarMenu(id = "sidebar",
                 menuItem("Introduction", tabName = "introduction"),
                 menuItem("Data Upload", tabName = "data_upload"),
-                menuItem("Code Execution", tabName = "code_execution"),
-                menuItem("CUG Test", tabName = "cug_test"),
-                menuItem("Community Detection", tabName = "community_detection")  # New menu item for community detection
+                menuItem("Community Detection", tabName = "community_detection")
     )
   ),
   dashboardBody(
@@ -99,47 +97,6 @@ ui <- dashboardPage(
                 visNetworkOutput("networkVis", height = "600px"),
                 h4("Hugging Face Explanation"),
                 textOutput("hfExplanation")
-              )
-      ),
-      tabItem(tabName = "cug_test",
-              fluidPage(
-                column(
-                  width = 12,
-                  h3("CUG Test", align = "center"),
-                  p("This page allows you to conduct a CUG (Conditional Uniform Graph) test on your network data. In particular, we will focus on evaluating the betweenness centralization of edges in your network. This helps to assess how much influence certain edges have in connecting different parts of the network."),
-                  p("The Conditional Uniform Graph (CUG) test is a statistical method used to measure the degree of centralization of edges in a network. Centralization refers to the extent to which a network's connectivity is concentrated around a few edges or nodes. In the context of the CUG test, we specifically examine betweenness centrality, which quantifies the importance of individual edges in facilitating communication between other nodes in the network."),
-                  p("By conducting the CUG test, you can gain insights into the structural properties of your network and identify key edges that play a significant role in connecting different components. This information is valuable for understanding the flow of information, identifying potential bottlenecks, and optimizing network efficiency."),
-                  actionButton("runCUG", "Run CUG Test"),
-                  fluidRow(
-                    column(width = 6,
-                           plotOutput("networkPlot", width = "100%", height = "400px")
-                    ),
-                    column(width = 6,
-                           plotOutput("betweennessPlot", width = "100%", height = "400px")
-                    )
-                  ),
-                  h4("CUG Test Results"),
-                  verbatimTextOutput("cugTestOutput"),
-                  h4("Hugging Face Explanation"),
-                  textOutput("hfExplanationCUG")
-                )
-              )
-      ),
-      tabItem(tabName = "community_detection",  # New tab for community detection
-              fluidRow(
-                column(width = 12,
-                       h3("Community Detection", align = "center"),
-                       selectInput("algorithm", "Choose a Community Detection Algorithm:",
-                                   choices = c("Fast Greedy", "Louvain", "Girvan-Newman", "Walktrap"),
-                                   selected = "Louvain"),
-                       actionButton("runAnalysis", "Run Analysis"),
-                       h4("Modularity Score"),
-                       verbatimTextOutput("modularityOutput"),
-                       h4("Community Memberships"),
-                       DT::dataTableOutput("membershipOutput"),
-                       h4("Hugging Face Explanation"),
-                       textOutput("hfExplanation")
-                )
               )
       )
     )
@@ -293,7 +250,7 @@ server <- function(input, output, session) {
           # arrows = 'to',
           color = list(color = "#cccccc", highlight = "#ffff33"),
           shadow = list(enabled = FALSE)
-                 ) %>%
+        ) %>%
         visOptions(highlightNearest = list(enabled = TRUE, degree = 1, hover = TRUE), 
                    nodesIdSelection = list(enabled = TRUE, style = "width: 150px;")) %>%
         visLayout(randomSeed = 123) %>%
@@ -308,6 +265,7 @@ server <- function(input, output, session) {
     communities <- toString(unique(analysisResult()$memberships))
     
     prompt <- sprintf("Explain the significance of a modularity score of %s and community memberships as follows: %s, in terms of network analysis and its potential impact.", modularity_val, communities)
+    
     
     # Set up API request
     api_url <- "https://api-inference.huggingface.co/models/google/flan-t5-xxl"
