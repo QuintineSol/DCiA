@@ -11,7 +11,7 @@ QAP_networks = function(network1, network2, reps = 100){
   #' - network2: The second network which should be entered into the comparison
   #' - reps: The number of repetitions which should be used in the Monte Carlo Simulation
   
-  if (length(intersect(igraph::V(network1)$name, igraph::V(network2)$name)) == length(igraph::V(network1)$name)){
+  if (length(intersect(igraph::V(network1)$name, igraph::V(network2)$name)) == length(igraph::V(network1)$name) && length(intersect(igraph::V(network1)$name, igraph::V(network2)$name)) == length(igraph::V(network2)$name)){
     # Networks have the same nodes, thus there do not need to be any nodes added to any of the networks
     
     # Simplify the networks and convert them to network class
@@ -83,8 +83,11 @@ QAP_networks = function(network1, network2, reps = 100){
   }
 }
 
-sna::plot.qaptest(QAP_networks(graph_grants_people, graph_knowledge, reps = 100))
-QAP_networks(graph_grants_people, graph_knowledge, reps = 100)
+#sna::plot.qaptest(QAP_networks(graph_grants_people, graph_knowledge, reps = 100))
+#QAP_networks(graph_grants_people, graph_knowledge, reps = 100)
+#QAP_networks(igraph::graph_from_data_frame(read.csv('C:/Users/woute/OneDrive/Documenten/GitHub/Wouter/DCiA/Data/grants_people_to_people.csv'), directed = F), igraph::graph_from_data_frame(read.csv('C:/Users/woute/OneDrive/Documenten/GitHub/Wouter/DCiA/Data/knowledge_sharing_people_to_people.csv'), directed = F), reps = 10)$dist
+
+#sna::plot.qaptest(QAP_networks(igraph::graph_from_data_frame(read.csv('C:/Users/woute/OneDrive/Documenten/GitHub/Wouter/DCiA/Data/grants_people_to_people.csv'), directed = F), igraph::graph_from_data_frame(read.csv('C:/Users/woute/OneDrive/Documenten/GitHub/Wouter/DCiA/Data/knowledge_sharing_people_to_people.csv'), directed = F), reps = 10))
 
 compare_statistics = function(network1, network2, significance_level = 0.95, statistics = NULL, nbins = 100){
   if (isTRUE(statistics['degree'])){
@@ -168,7 +171,7 @@ if (test$p.value < 1 - significance_level){
 }
 }
 
-compare_statistics(network1 = graph_grants_people, network2 = graph_co_author, statistics = c('degree' = T, 'betweenness' = T))
+#compare_statistics(network1 = graph_grants_people, network2 = graph_co_author, statistics = c('degree' = T, 'betweenness' = T))
 
 compare_actors = function(network1, network2, metric = 'betweenness'){
   print(paste('There are', length(intersect(igraph::V(network2)$name, igraph::V(network1)$name)), 'overlapping nodes in both networks'))
@@ -200,7 +203,7 @@ compare_actors = function(network1, network2, metric = 'betweenness'){
   return(res_df)
 }
 
-compare_actors(network1 = graph_grants_people, network2 = graph_knowledge)
+#compare_actors(network1 = graph_grants_people, network2 = graph_knowledge)
 
 bridge_comp = function(network1, network2, method = 'mean'){
   print(paste('Network 1 has',length(igraph::bridges(network1)), 'Bridges'))
@@ -267,30 +270,30 @@ bridge_comp = function(network1, network2, method = 'mean'){
 
 
 
-bridge_comp(graph_grants_people, graph_co_author)
+#bridge_comp(graph_grants_people, graph_co_author)
 
-for (i in igraph::bridges(graph_grants_people)){
-  print(igraph::E(graph_grants_people)[i])
-}
-igraph::as_edgelist()
-igraph::mean_distance(graph_grants_people, directed = F, weights = NA, details = T)
-igraph::bridges(graph_grants_people)
-na
-data.frame(cbind(1:5, 6:10, 11:15))
-igraph::delete.edges(graph_grants_people, '2')
-graph_grants_people
-c('4' = 6, '2' = 7, '9' = 2)
+#for (i in igraph::bridges(graph_grants_people)){
+#  print(igraph::E(graph_grants_people)[i])
+#}
+#igraph::as_edgelist()
+#igraph::mean_distance(graph_grants_people, directed = F, weights = NA, details = T)
+#igraph::bridges(graph_grants_people)
+#na
+#data.frame(cbind(1:5, 6:10, 11:15))
+#igraph::delete.edges(graph_grants_people, '2')
+#graph_grants_people
+#c('4' = 6, '2' = 7, '9' = 2)
 
-igraph::distances(graph_grants_people, v = c(361), to = c(362), weights = NA)[1,1]
-match(92996508, igraph::V(graph_grants_people)$name)
+#igraph::distances(graph_grants_people, v = c(361), to = c(362), weights = NA)[1,1]
+#match(92996508, igraph::V(graph_grants_people)$name)
 
-igraph::as_edgelist(igraph::E(graph_grants_people)[4])
+#igraph::as_edgelist(igraph::E(graph_grants_people)[4])
 
-igraph::V(igraph::subgraph.edges(graph_grants_people, igraph::E(graph_grants_people)[4]))$name
+#igraph::V(igraph::subgraph.edges(graph_grants_people, igraph::E(graph_grants_people)[4]))$name
 
-igraph::V(igraph::subgraph.edges(graph_grants_people, igraph::E(graph_grants_people)[igraph::bridges(graph_grants_people)]))$name
+#igraph::V(igraph::subgraph.edges(graph_grants_people, igraph::E(graph_grants_people)[igraph::bridges(graph_grants_people)]))$name
 
-setNames(1:12, igraph::E(graph_grants_people)[igraph::bridges(graph_grants_people)])
+#setNames(1:12, igraph::E(graph_grants_people)[igraph::bridges(graph_grants_people)])
 
-igraph::bridges(graph_grants_people)
-apply(igraph::get.edgelist(graph_grants_people)[igraph::bridges(graph_grants_people),],1,paste, collapse = ' -- ')
+#igraph::bridges(graph_grants_people)
+#apply(igraph::get.edgelist(graph_grants_people)[igraph::bridges(graph_grants_people),],1,paste, collapse = ' -- ')

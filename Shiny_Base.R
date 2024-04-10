@@ -1,5 +1,6 @@
 # Load necessary libraries
 library(shiny)
+library(shinycssloaders)
 library(shinydashboard)
 library(DT)          # For data tables
 library(readxl)      # For reading Excel files
@@ -8,6 +9,7 @@ library(httr)        # For HTTP requests
 library(jsonlite)    # For JSON processing
 library(igraph)      # For network analysis (not explicitly used in provided snippet but may be needed)
 library(visNetwork)
+source(paste0(dirname(rstudioapi::getSourceEditorContext()$path), '/Comparison_script.R'))
 
 # Setting the Hugging Face API key (ensure this is securely managed in production)
 Sys.setenv(HUGGINGFACE_API_KEY = "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")
@@ -19,14 +21,15 @@ ui <- dashboardPage(
     sidebarMenu(id = "sidebar",
                 menuItem("Introduction", tabName = "introduction"),
                 menuItem("Data Upload", tabName = "data_upload"),
-                menuItem("Community Detection", tabName = "community_detection")
+                menuItem("Community Detection", tabName = "community_detection"),
+                menuItem("Network Comparison", tabName = 'network_comparison')
     )
   ),
   dashboardBody(
     tags$head(
       tags$style(HTML("
         .previous-button { position: fixed; top: 60px; left: 250px; z-index: 1050; }
-        .next-button { position: absolute; top: 60px; right: 20px; z-index: 100; }
+        .next-button { position: fixed; top: 60px; right: 20px; z-index: 100; }
       "))
     ),
     uiOutput("prevButtonUI"),
@@ -78,7 +81,7 @@ ui <- dashboardPage(
                   ),
                   p("By interpreting the modularity score in the context of your specific network, you can uncover insights into its underlying structure and dynamics. Let's have a look your network's modulariy score:")
                 ),
-                verbatimTextOutput("modularityOutput"),
+                withSpinner(verbatimTextOutput("modularityOutput"), type = 4),
                 h4("Community Memberships"),
                 div(
                   p("Community membership assigns each node in the network to one or more groups, based on the structure of connections. This reflects the node's role and position within the overall network."),
@@ -89,15 +92,36 @@ ui <- dashboardPage(
                   ),
                   p("Community membership insights provide a granular view of how individuals or nodes are grouped within the network, offering a foundation for targeted strategies and initiatives. Here are the memberships found in your data:"),
                 ),
-                DT::dataTableOutput("membershipOutput"),
+                withSpinner(DT::dataTableOutput("membershipOutput"), type = 4),
                 h4("Network Visualization"),
                 div(
                   p("Use the visualization tool below to explore your network as you wish. The communities are illustrated by node colour.")
                 ),
-                visNetworkOutput("networkVis", height = "600px"),
+                withSpinner(visNetworkOutput("networkVis", height = "600px"), type = 4),
                 h4("Hugging Face Explanation"),
                 textOutput("hfExplanation")
-              )
+              ),
+      ),
+        tabItem(tabName = 'network_comparison',
+                fluidPage(
+                h3("Network comaprison Page", align = "center"),
+                h4('Upload a second network to compare to'),
+                       
+                fileInput('file2', 'Choose CSV/Excel File', accept = c('.csv', '.xlsx', '.xls')),
+                DT::dataTableOutput("dataTable2"),  # Renders the uploaded data table
+                h4('Correlation in the ties between the networks'),
+                p('In this part of the analysis a QAP methodology will be used to compare the correlation between two selected networks'),
+                numericInput('QAPreps', 'Number of repetitions:', 100, min = 10, max = 10000),
+                actionButton('QAPAnalysis', 'Run Analysis'), 
+                verbatimTextOutput('QAP'),
+                withSpinner(plotOutput('QAPplot'), type = 4),
+                h4('Statistical differences between the networks'),
+                selectInput('statisticChoice', 'What statistics should be compared in the networks?', 
+                            choices = c('degree', 'closeness', 'betweenness'), multiple = T)),
+                actionButton('StatCompare', 'Run Statistics Comparisons'),
+                verbatimTextOutput('Stats'),
+                withSpinner(plotOutput('Statplot'), type = 4)
+                
       )
     )
   )
@@ -107,9 +131,12 @@ ui <- dashboardPage(
 server <- function(input, output, session) {
   # Reactive value to store uploaded dataset
   dataset <- reactiveVal(NULL)
+  dataset2 = reactiveVal(NULL)
   
   # Initialize shouldAnalyze to control when to run analysis
-  shouldAnalyze <- reactiveVal(FALSE)  
+  shouldAnalyze <- reactiveVal(FALSE)
+  shouldQAPAnalyse = reactiveVal(F)
+  shouldStatisticCompare = reactiveVal(FALSE)
   
   # Observe file upload and update `dataset`
   observeEvent(input$file1, {
@@ -118,6 +145,16 @@ server <- function(input, output, session) {
       dataset(read.csv(inFile$datapath))  # Load CSV file
     } else if (grepl("\\.(xlsx|xls)$", inFile$name)) {
       dataset(read_excel(inFile$datapath))  # Load Excel file
+    }
+  })
+  
+  # Second data import for the second dataset in the comparison tab
+  observeEvent(input$file2, {
+    inFile <- input$file2
+    if (grepl("\\.csv$", inFile$name)) {
+      dataset2(read.csv(inFile$datapath))  # Load CSV file
+    } else if (grepl("\\.(xlsx|xls)$", inFile$name)) {
+      dataset2(read_excel(inFile$datapath))  # Load Excel file
     }
   })
   
@@ -133,6 +170,12 @@ server <- function(input, output, session) {
     dataset()  # Return the dataset for rendering
   })
   
+  # Render the second dataset to show to the user what was put in
+  output$dataTable2 <- DT::renderDataTable({
+    req(dataset2())  # Ensure dataset is not NULL
+    dataset2()  # Return the dataset for rendering
+  })
+  
   # Dynamically render the "Previous" button
   output$prevButtonUI <- renderUI({
     if (!is.null(input$sidebar) && input$sidebar != "introduction") {  # Exclude on the first tab
@@ -142,13 +185,13 @@ server <- function(input, output, session) {
   
   # Dynamically render the "Next" button
   output$nextButtonUI <- renderUI({
-    if (!is.null(input$sidebar) && input$sidebar != "community_detection") {  # Exclude on the last tab
+    if (!is.null(input$sidebar) && input$sidebar != "network_comparison") {  # Exclude on the last tab
       actionButton("nextTab", "Next", class = "next-button btn btn-primary")
     }
   })
   
   # Define the sequence of tabs
-  tabNames <- c("introduction", "data_upload", "community_detection")
+  tabNames <- c("introduction", "data_upload", "community_detection", 'network_comparison')
   
   # Function to navigate to the next tab
   observeEvent(input$nextTab, {
@@ -172,6 +215,17 @@ server <- function(input, output, session) {
   # Check for multi-edges and show modal dialog if conditions are met
   observeEvent(input$runAnalysis, {
     
+    if (is.null(input$file1)) {
+      # if there is no data uploaded,  and show a modal message
+      showModal(
+        modalDialog(title = 'No data uploaded',
+                    'Please upload a network on the Data Upload screen before clicking the button',
+        easyClose = TRUE,
+        footer = modalButton("Got it!"))
+      )
+      # Prevent further execution
+      return()
+    }
     req(dataset())
     g <- graph_from_data_frame(dataset(), directed = FALSE)
     
@@ -195,6 +249,7 @@ server <- function(input, output, session) {
   # Analysis result reactive expression
   analysisResult <- eventReactive(input$runAnalysis, {
     
+    
     req(dataset())
     g <- graph_from_data_frame(dataset(), directed = FALSE)
     result <- switch(input$algorithm,
@@ -202,8 +257,11 @@ server <- function(input, output, session) {
                      "Louvain" = cluster_louvain(g),
                      "Girvan-Newman" = cluster_edge_betweenness(g),
                      "Walktrap" = cluster_walktrap(g))
+    
     list(g = g, result = result, modularity = modularity(result), memberships = membership(result))
   })
+  
+  
   
   # Modularity Output
   output$modularityOutput <- renderPrint({
@@ -224,6 +282,11 @@ server <- function(input, output, session) {
       memberships <- analysisResult()$memberships
       data.frame(Node = names(memberships), Community = memberships)
     }
+  })
+  
+  # Activate analysis when "Run Analysis" button is clicked
+  observeEvent(input$runAnalysis, {
+    shouldAnalyze(TRUE)
   })
   
   # Community Plot
@@ -285,6 +348,87 @@ server <- function(input, output, session) {
   
   output$hfExplanation <- renderText({
     explanationOutput()
+  })
+  
+  # Activate the QAP analysis when "Run Analysis" button is clicked
+  observeEvent(input$QAPAnalysis, {
+    shouldQAPAnalyse(TRUE)
+  })
+  
+  
+  QAP_test = eventReactive(input$QAPAnalysis, {
+    req(input$QAPreps)
+    req(shouldQAPAnalyse)
+    req(dataset())
+    req(dataset2())
+    g1 <- graph_from_data_frame(dataset(), directed = FALSE)
+    g2 <- graph_from_data_frame(dataset2(), directed = FALSE)
+    result = QAP_networks(g1, g2, reps = input$QAPreps)
+    print(paste('Test statistic:', result$testval))
+    result
+  })
+  
+  output$QAP = renderPrint({
+    req(QAP_test())
+    QAP_test()
+  })
+  
+  output$QAPplot = renderPlot({
+    req(QAP_test())
+    sna::plot.qaptest(QAP_test())
+  })
+  
+  observe({
+    input$statisticChoice
+    shouldStatisticCompare(FALSE)
+  })
+  
+  observeEvent(input$StatCompare, {
+    shouldStatisticCompare(TRUE)
+  })
+  
+  Statistical_comparisons = eventReactive(input$StatCompare, {
+    req(input$StatCompare)
+    req(shouldStatisticCompare)
+    req(dataset())
+    req(dataset2())
+    if (is.null(input$statisticChoice)){
+      showModal(
+        modalDialog(title = 'No Choice made',
+                    'Please select at least one statistic to be tested in the choice menu',
+                    easyClose = TRUE,
+                    footer = modalButton("Got it!"))
+      )
+    }
+    statistics = c()
+    if ('degree' %in% input$statisticChoice){
+      statistics = c(statistics, 'degree' = T)
+    } else {
+      statistics = c(statistics, 'degree' = F)
+    }
+    if ('closeness' %in% input$statisticChoice){
+      statistics = c(statistics, 'closeness' = T)
+    } else {
+      statistics = c(statistics, 'closeness' = F)
+    }
+    if ('betweenness' %in% input$statisticChoice){
+      statistics = c(statistics, 'betweenness' = T)
+    } else {
+      statistics = c(statistics, 'betweenness' = F)
+    }
+    g1 <- graph_from_data_frame(dataset(), directed = FALSE)
+    g2 <- graph_from_data_frame(dataset2(), directed = FALSE)
+    compare_statistics(g1, g2, statistics = statistics)
+  })
+  
+  output$Stats = renderPrint({
+    req(Statistical_comparisons())
+    Statistical_comparisons()
+  })
+  
+  output$StatPlot = renderPlot({
+    req(Statistical_comparisons())
+    Statistical_comparisons()
   })
 }
 
