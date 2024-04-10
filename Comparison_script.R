@@ -93,8 +93,8 @@ compare_statistics = function(network1, network2, significance_level = 0.95, sta
     degrees_2 = igraph::degree(network2)
     print(paste('The average degree of the second network is:', mean(degrees_2)))
     print(ggplot2::ggplot() + 
-    ggplot2::geom_density(ggplot2::aes(x = igraph::degree(network1), y = ggplot2::after_stat(density)), color= 'Blue',fill="lightblue", alpha=0.4, bw =  max(quantile(degrees_2, c(.98))*1.05, quantile(degrees_1, c(.98))*1.05)/nbins) + 
-    ggplot2::geom_density(ggplot2::aes(x = igraph::degree(network2), y = ggplot2::after_stat(density)), color = 'Orange', fill = '#fcd997', alpha=0.4, bw =  max(quantile(degrees_2, c(.98))*1.05, quantile(degrees_1, c(.98))*1.05)/nbins) + 
+    ggplot2::geom_density(ggplot2::aes(x = igraph::degree(network1)), color= 'Blue',fill="lightblue", alpha=0.4, bw =  max(quantile(degrees_2, c(.98))*1.05, quantile(degrees_1, c(.98))*1.05)/nbins) + 
+    ggplot2::geom_density(ggplot2::aes(x = igraph::degree(network2)), color = 'Orange', fill = '#fcd997', alpha=0.4, bw =  max(quantile(degrees_2, c(.98))*1.05, quantile(degrees_1, c(.98))*1.05)/nbins) + 
     ggplot2::geom_vline(ggplot2::aes(xintercept = mean(igraph::degree(network2))), color = 'orange', linetype = 'dashed', linewidth = max(quantile(igraph::degree(network2), c(.98))*1.05, quantile(igraph::degree(network1), c(.98))*1.05)/100) +
     ggplot2::geom_vline(ggplot2::aes(xintercept = mean(igraph::degree(network1))), color = 'blue', linetype = 'dashed', linewidth = max(quantile(igraph::degree(network2), c(.98))*1.05, quantile(igraph::degree(network1), c(.98))*1.05)/100) + 
     ggplot2::coord_cartesian(xlim = c(0, max(quantile(igraph::degree(network2), c(.98))*1.05, quantile(igraph::degree(network1), c(.98))*1.05)), expand = F)+ ggplot2::theme(legend.position="right"))
@@ -170,15 +170,127 @@ if (test$p.value < 1 - significance_level){
 
 compare_statistics(network1 = graph_grants_people, network2 = graph_co_author, statistics = c('degree' = T, 'betweenness' = T))
 
-compare_actors = function(network1, network2){
+compare_actors = function(network1, network2, metric = 'betweenness'){
   print(paste('There are', length(intersect(igraph::V(network2)$name, igraph::V(network1)$name)), 'overlapping nodes in both networks'))
-  print(paste0('This meeans that ', length(intersect(igraph::V(network2)$name, igraph::V(network1)$name))/length(igraph::V(network2)$name)*100, '% of the in network 2 are in both networks'))
-  print(paste0('This meeans that ', length(intersect(igraph::V(network2)$name, igraph::V(network1)$name))/length(igraph::V(network1)$name)*100, '% of the in network 1 are in both networks'))
+  print(paste0('This means that ', length(intersect(igraph::V(network2)$name, igraph::V(network1)$name))/length(igraph::V(network2)$name)*100, '% of the in network 2 are in both networks'))
+  print(paste0('This means that ', length(intersect(igraph::V(network2)$name, igraph::V(network1)$name))/length(igraph::V(network1)$name)*100, '% of the in network 1 are in both networks'))
   print(length(setdiff(igraph::V(network2)$name, igraph::V(network1)$name)))
   print(length(setdiff(igraph::V(network1)$name, igraph::V(network2)$name)))
+  if (metric == 'closeness'){
+    igraph::E(network1)$weight = 1
+    igraph::E(network2)$weight = 1
+    important_actors1 = names(sort(igraph::closeness(network1), decreasing = T)[1:5])
+    important_actors2 = names(sort(igraph::closeness(network2), decreasing = T)[1:5])
+  } else if (metric == 'betweenness'){
+    igraph::E(network1)$weight = 1
+    igraph::E(network2)$weight = 1
+    important_actors1 = names(sort(igraph::betweenness(network1), decreasing = T)[1:5])
+    important_actors2 = names(sort(igraph::betweenness(network2), decreasing = T)[1:5])
+  } else if (metric == 'degree'){
+    important_actors1 = names(sort(igraph::degree(network1), decreasing = T)[1:5])
+    important_actors2 = names(sort(igraph::degree(network2), decreasing = T)[1:5])
+  } else if (metric == 'connectivity'){
+    pass # Iets met igraph::delete_vertices, mean distances?
+  } else{
+    stop('No relevant statistic selected')
+  }
+  res_df = data.frame(cbind(important_actors1, important_actors2))
+  colnames(res_df) = c('Important actors Network 1', 'Important actors Network 2')
+  rownames(res_df) = c('Most important', '2nd most important', '3rd most important', '4th most important', '5th most important')
+  return(res_df)
 }
 
 compare_actors(network1 = graph_grants_people, network2 = graph_knowledge)
 
-graph_grants_people
+bridge_comp = function(network1, network2, method = 'mean'){
+  print(paste('Network 1 has',length(igraph::bridges(network1)), 'Bridges'))
+  print(paste('Network 2 has',length(igraph::bridges(network2)), 'Bridges'))
+  if (method == 'mean'){
+    # most important bridges based upon the increase of the mean distance in the graph
+    mean_distance_1 = igraph::mean_distance(network1, directed = F, weights = NA)
+    mean_distance_2 = igraph::mean_distance(network2, directed = F, weights = NA)
+    
+    print(paste0('Original mean distance of Network 1 is: ', mean_distance_1))
+    print(paste0('Original mean distance of Network 2 is: ', mean_distance_2))
+    
+    changed_distances_1 = c()
+    changed_distances_2 = c()
+    for (bridge in igraph::bridges(network1)){
+      temp_network = igraph::delete.edges(network1, bridge)
+      changed_distances_1 = c(changed_distances_1, igraph::mean_distance(temp_network, directed = F, weights = NA))
+    }
+    changed_distances_1 = setNames(changed_distances_1, apply(igraph::get.edgelist(network1)[igraph::bridges(network1),],1,paste, collapse = ' -- '))
+    
+    for (bridge in igraph::bridges(network2)){
+      temp_network = igraph::delete.edges(network2, bridge)
+      changed_distances_2 = c(changed_distances_2, igraph::mean_distance(temp_network, directed = F, weights = NA))
+    }
+    changed_distances_2 = setNames(changed_distances_2, apply(igraph::get.edgelist(network2)[igraph::bridges(network2),],1,paste, collapse = ' -- '))
+    
+    best_bridges_1 = names(sort(changed_distances_1)[1:5])
+    best_bridges_2 = names(sort(changed_distances_2)[1:5])
+    
+  } else if (metric == 'absolute'){
+    changed_distances_1 = c()
+    changed_distances_2 = c()
+    
+    for (bridge in igraph::bridges(network1)){
+      nodes = igraph::V(igraph::subgraph.edges(network1, igraph::E(network1)[bridge]))$name 
+      node1_id = match(nodes[1], igraph::V(network1))
+      node2_id = match(nodes[2], igraph::V(network1))
+      temp_network = igraph::delete.edges(network1, bridge)
+      changed_distances_1 = c(changed_distances_1, igraph::distances(temp_network, v = c(node1_id), to = c(node2_id), weights = NA)[1,1])
+    }
+    changed_distances_1 = setNames(changed_distances_1, apply(igraph::get.edgelist(network1)[igraph::bridges(network1),],1,paste, collapse = ' -- '))
+    
+    for (bridge in igraph::bridges(network2)){
+      nodes = igraph::V(igraph::subgraph.edges(network2, igraph::E(network2)[bridge]))$name 
+      node1_id = match(nodes[1], igraph::V(network2))
+      node2_id = match(nodes[2], igraph::V(network2))
+      temp_network = igraph::delete.edges(network2, bridge)
+      changed_distances_2 = c(changed_distances_2, igraph::distances(temp_network, v = c(node1_id), to = c(node2_id), weights = NA)[1,1])
+    }
+    changed_distances_2 = setNames(changed_distances_2, apply(igraph::get.edgelist(network2)[igraph::bridges(network2),],1,paste, collapse = ' -- '))
+    
+    best_bridges_1 = names(sort(changed_distances_1, decreasing = T)[1:5])
+    best_bridges_2 = names(sort(changed_distances_2, decreasing = T)[1:5])
+    
+  } else{
+    stop('No relevant statistic selected')
+  }
+  res_df = data.frame(cbind(best_bridges_1, best_bridges_2))
+  colnames(res_df) = c('Important bridges Network 1', 'Important bridges Network 2')
+  rownames(res_df) = c('Most important', '2nd most important', '3rd most important', '4th most important', '5th most important')
+  return(res_df)
+  
+}
 
+
+
+bridge_comp(graph_grants_people, graph_co_author)
+
+for (i in igraph::bridges(graph_grants_people)){
+  print(igraph::E(graph_grants_people)[i])
+}
+igraph::as_edgelist()
+igraph::mean_distance(graph_grants_people, directed = F, weights = NA, details = T)
+igraph::bridges(graph_grants_people)
+na
+data.frame(cbind(1:5, 6:10, 11:15))
+igraph::delete.edges(graph_grants_people, '2')
+graph_grants_people
+c('4' = 6, '2' = 7, '9' = 2)
+
+igraph::distances(graph_grants_people, v = c(361), to = c(362), weights = NA)[1,1]
+match(92996508, igraph::V(graph_grants_people)$name)
+
+igraph::as_edgelist(igraph::E(graph_grants_people)[4])
+
+igraph::V(igraph::subgraph.edges(graph_grants_people, igraph::E(graph_grants_people)[4]))$name
+
+igraph::V(igraph::subgraph.edges(graph_grants_people, igraph::E(graph_grants_people)[igraph::bridges(graph_grants_people)]))$name
+
+setNames(1:12, igraph::E(graph_grants_people)[igraph::bridges(graph_grants_people)])
+
+igraph::bridges(graph_grants_people)
+apply(igraph::get.edgelist(graph_grants_people)[igraph::bridges(graph_grants_people),],1,paste, collapse = ' -- ')
