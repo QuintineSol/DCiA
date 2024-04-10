@@ -287,13 +287,4 @@ plot_df = cbind('grants' = table(factor(c(edge_info_3[edge_info_3[,3] == edge_in
 plot_df[sapply(plot_df, is.infinite)] <- NA
 boxplot(plot_df)
 
-# GIVES ERRORS
-people_table$`Internal Staff vs. External Staff` = as.character(people_table$`Internal Staff vs. External Staff`)
-network_knowledge_full = network::add.vertices(intergraph::asNetwork(igraph::simplify(graph_knowledge)), 
-                                               sum(!(as.character(people_table[as.character(people_table$`Internal Staff vs. External Staff`) == 'Internal','Node']) %in% igraph::V(graph_knowledge)$name)), 
-                                               list(
-                                                 vertex.names = 
-                                                   as.character(people_table[as.character(people_table$`Internal Staff vs. External Staff`) == 'Internal',][!(as.character(people_table[as.character(people_table$`Internal Staff vs. External Staff`) == 'Internal',]$Node) %in% igraph::V(graph_knowledge)$name),'Node'])))
-  
-network::add.vertices(intergraph::asNetwork(igraph::simplify(graph_knowledge)),4)%v%
-sna::qaptest(list(network_knowledge, network_grants_people), fun = sna::gcor)
+igraph::union()
