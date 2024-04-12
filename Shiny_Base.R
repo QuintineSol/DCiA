@@ -118,10 +118,16 @@ ui <- dashboardPage(
                 h4('Statistical differences between the networks'),
                 selectInput('statisticChoice', 'What statistics should be compared in the networks?', 
                             choices = c('degree', 'closeness', 'betweenness'), multiple = T)),
-                actionButton('StatCompare', 'Run Statistics Comparisons'),
+                actionButton('StatCompare', 'Run Analsyis'),
                 verbatimTextOutput('Stats'),
-                withSpinner(plotOutput('Statplot'), type = 4)
-                
+                conditionalPanel("input.statisticChoice.includes('degree')", withSpinner(plotOutput('degree_plot'), type = 4)),
+                conditionalPanel("input.statisticChoice.includes('closeness')", withSpinner(plotOutput('closeness_plot'), type = 4)),
+                conditionalPanel("input.statisticChoice.includes('betweenness')", withSpinner(plotOutput('betweenness_plot'), type = 4)),
+                h4('Most important actors in both networks:'),
+                selectInput('ActorMetric', 'What statistic should be used to determine the most important actors?', 
+                            choices = c('degree','closeness','betweenness'), selected = 'betweenness'),
+                actionButton('ActorComparison', 'Run Analysis'),
+                DT::dataTableOutput('DTActComp')
       )
     )
   )
@@ -137,6 +143,8 @@ server <- function(input, output, session) {
   shouldAnalyze <- reactiveVal(FALSE)
   shouldQAPAnalyse = reactiveVal(F)
   shouldStatisticCompare = reactiveVal(FALSE)
+  
+  degree_plot <- reactiveVal(NULL)
   
   # Observe file upload and update `dataset`
   observeEvent(input$file1, {
@@ -389,7 +397,7 @@ server <- function(input, output, session) {
   
   Statistical_comparisons = eventReactive(input$StatCompare, {
     req(input$StatCompare)
-    req(shouldStatisticCompare)
+    req(shouldStatisticCompare())
     req(dataset())
     req(dataset2())
     if (is.null(input$statisticChoice)){
@@ -418,7 +426,7 @@ server <- function(input, output, session) {
     }
     g1 <- graph_from_data_frame(dataset(), directed = FALSE)
     g2 <- graph_from_data_frame(dataset2(), directed = FALSE)
-    compare_statistics(g1, g2, statistics = statistics)
+    stats = compare_statistics(g1, g2, statistics = statistics)
   })
   
   output$Stats = renderPrint({
@@ -426,10 +434,67 @@ server <- function(input, output, session) {
     Statistical_comparisons()
   })
   
-  output$StatPlot = renderPlot({
-    req(Statistical_comparisons())
-    Statistical_comparisons()
+  degree_plot = eventReactive(input$StatCompare, {
+    req(input$StatCompare)
+    req(shouldStatisticCompare)
+    if ('degree' %in% input$statisticChoice){
+    g1 <- graph_from_data_frame(dataset(), directed = FALSE)
+    g2 <- graph_from_data_frame(dataset2(), directed = FALSE)
+    compare_statistics(g1, g2, statistics = c('degree' = T))$degree_plot
+    } else{
+      NULL
+    }
+  }, ignoreInit = T)
+  
+  output$degree_plot = renderPlot({
+    req(degree_plot())
+    print(degree_plot())
   })
+  
+  closeness_plot = eventReactive(input$StatCompare, {
+    req(input$StatCompare)
+    req(shouldStatisticCompare)
+    if ('closeness' %in% input$statisticChoice){
+      g1 <- graph_from_data_frame(dataset(), directed = FALSE)
+      g2 <- graph_from_data_frame(dataset2(), directed = FALSE)
+      compare_statistics(g1, g2, statistics = c('closeness' = T))$closeness_plot
+    } else{
+      NULL
+    }
+  }, ignoreInit = T)
+  
+  output$closeness_plot = renderPlot({
+    req(closeness_plot())
+    print(closeness_plot())
+  })
+  
+  betweenness_plot = eventReactive(input$StatCompare, {
+    req(input$StatCompare)
+    req(shouldStatisticCompare)
+    if ('betweenness' %in% input$statisticChoice){
+      g1 <- graph_from_data_frame(dataset(), directed = FALSE)
+      g2 <- graph_from_data_frame(dataset2(), directed = FALSE)
+      compare_statistics(g1, g2, statistics = c('betweenness' = T))$betweenness_plot
+    } else{
+      NULL
+    }
+  }, ignoreInit = T)
+  
+  output$betweenness_plot = renderPlot({
+    req(betweenness_plot())
+    print(betweenness_plot())
+  })
+  
+  observe({
+    input$A
+    shouldStatisticCompare(FALSE)
+  })
+  
+  observeEvent(input$StatCompare, {
+    shouldStatisticCompare(TRUE)
+  })
+  
+  actor_df = eventReactive()
 }
 
 # Run the Shiny application

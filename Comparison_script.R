@@ -90,17 +90,20 @@ QAP_networks = function(network1, network2, reps = 100){
 #sna::plot.qaptest(QAP_networks(igraph::graph_from_data_frame(read.csv('C:/Users/woute/OneDrive/Documenten/GitHub/Wouter/DCiA/Data/grants_people_to_people.csv'), directed = F), igraph::graph_from_data_frame(read.csv('C:/Users/woute/OneDrive/Documenten/GitHub/Wouter/DCiA/Data/knowledge_sharing_people_to_people.csv'), directed = F), reps = 10))
 
 compare_statistics = function(network1, network2, significance_level = 0.95, statistics = NULL, nbins = 100){
+  closeness_plot = NULL
+  degree_plot = NULL
+  betweenness_plot = NULL
   if (isTRUE(statistics['degree'])){
     degrees_1 = igraph::degree(network1)
     print(paste('The average degree of the first network is:', mean(degrees_1)))
     degrees_2 = igraph::degree(network2)
     print(paste('The average degree of the second network is:', mean(degrees_2)))
-    print(ggplot2::ggplot() + 
+    degree_plot = ggplot2::ggplot() + 
     ggplot2::geom_density(ggplot2::aes(x = igraph::degree(network1)), color= 'Blue',fill="lightblue", alpha=0.4, bw =  max(quantile(degrees_2, c(.98))*1.05, quantile(degrees_1, c(.98))*1.05)/nbins) + 
     ggplot2::geom_density(ggplot2::aes(x = igraph::degree(network2)), color = 'Orange', fill = '#fcd997', alpha=0.4, bw =  max(quantile(degrees_2, c(.98))*1.05, quantile(degrees_1, c(.98))*1.05)/nbins) + 
     ggplot2::geom_vline(ggplot2::aes(xintercept = mean(igraph::degree(network2))), color = 'orange', linetype = 'dashed', linewidth = max(quantile(igraph::degree(network2), c(.98))*1.05, quantile(igraph::degree(network1), c(.98))*1.05)/100) +
     ggplot2::geom_vline(ggplot2::aes(xintercept = mean(igraph::degree(network1))), color = 'blue', linetype = 'dashed', linewidth = max(quantile(igraph::degree(network2), c(.98))*1.05, quantile(igraph::degree(network1), c(.98))*1.05)/100) + 
-    ggplot2::coord_cartesian(xlim = c(0, max(quantile(igraph::degree(network2), c(.98))*1.05, quantile(igraph::degree(network1), c(.98))*1.05)), expand = F)+ ggplot2::theme(legend.position="right"))
+    ggplot2::coord_cartesian(xlim = c(0, max(quantile(igraph::degree(network2), c(.98))*1.05, quantile(igraph::degree(network1), c(.98))*1.05)), expand = F)+ ggplot2::theme(legend.position="right")
     test = stats::t.test(degrees_1, degrees_2, alternative = 'two.sided')
     if (test$p.value < 1 - significance_level){
       print('There is a significant difference between the degree of both graphs')
@@ -122,12 +125,12 @@ compare_statistics = function(network1, network2, significance_level = 0.95, sta
     print(paste('The average betweenness centrality of the first network is:', mean(degrees_1)))
     degrees_2 = igraph::betweenness(network2)
     print(paste('The average betweenness centrality of the second network is:', mean(degrees_2)))
-    print(ggplot2::ggplot() + 
+    betweenness_plot = ggplot2::ggplot() + 
             ggplot2::geom_density(ggplot2::aes(x = degrees_1), color= 'Blue',fill="lightblue", alpha=0.4, bw =  max(quantile(degrees_2, c(.98))*1.05, quantile(degrees_1, c(.98))*1.05)/nbins) + 
             ggplot2::geom_density(ggplot2::aes(x = degrees_2), color = 'Orange', fill = '#fcd997', alpha=0.4, bw = max(quantile(degrees_2, c(.98))*1.05, quantile(degrees_1, c(.98))*1.05)/nbins) + 
             ggplot2::geom_vline(ggplot2::aes(xintercept = mean(degrees_2)), color = 'orange', linetype = 'dashed', linewidth = 1) +
             ggplot2::geom_vline(ggplot2::aes(xintercept = mean(degrees_1)), color = 'blue', linetype = 'dashed', linewidth = 1) + 
-            ggplot2::coord_cartesian(xlim = c(0, max(quantile(degrees_2, c(.98))*1.05, quantile(degrees_1, c(.98))*1.05)))+ ggplot2::theme(legend.position="right"))
+            ggplot2::coord_cartesian(xlim = c(0, max(quantile(degrees_2, c(.98))*1.05, quantile(degrees_1, c(.98))*1.05)))+ ggplot2::theme(legend.position="right")
     test = stats::t.test(degrees_1, degrees_2, alternative = 'two.sided')
     if (test$p.value < 1 - significance_level){
       print('There is a significant difference between the degree of both graphs')
@@ -146,15 +149,16 @@ compare_statistics = function(network1, network2, significance_level = 0.95, sta
     igraph::E(network1)$weight = 1
     igraph::E(network2)$weight = 1
     degrees_1 = igraph::closeness(network1)
-    print(paste('The average betweenness centrality of the first network is:', mean(degrees_1)))
+    print(paste('The average closeness centrality of the first network is:', mean(degrees_1, na.rm= T)))
     degrees_2 = igraph::closeness(network2)
-    print(paste('The average betweenness centrality of the second network is:', mean(degrees_2)))
-    print(ggplot2::ggplot() + 
-            ggplot2::geom_density(ggplot2::aes(x = degrees_1), color= 'Blue',fill="lightblue", alpha=0.4, bw =  max(quantile(degrees_2, c(.98))*1.05, quantile(degrees_1, c(.98))*1.05)/nbins) + 
-            ggplot2::geom_density(ggplot2::aes(x = degrees_2), color = 'Orange', fill = '#fcd997', alpha=0.4, bw = max(quantile(degrees_2, c(.98))*1.05, quantile(degrees_1, c(.98))*1.05)/nbins) + 
-  ggplot2::geom_vline(ggplot2::aes(xintercept = mean(degrees_2)), color = 'orange', linetype = 'dashed', linewidth = 1) +
-    ggplot2::geom_vline(ggplot2::aes(xintercept = mean(degrees_1)), color = 'blue', linetype = 'dashed', linewidth = 1) + 
-    ggplot2::coord_cartesian(xlim = c(0, max(quantile(degrees_2, c(.98))*1.05, quantile(degrees_1, c(.98))*1.05)))+ ggplot2::theme(legend.position="right"))
+    print(paste('The average closeness centrality of the second network is:', mean(degrees_2, na.rm = T)))
+    print(max(quantile(degrees_2, c(.98), na.rm = T)*1.05, quantile(degrees_1, c(.98), na.rm = T)*1.05)/nbins)
+    closeness_plot = ggplot2::ggplot() + 
+            ggplot2::geom_density(ggplot2::aes(x = degrees_1), color= 'Blue',fill="lightblue", alpha=0.4, bw =  1/nbins) + 
+            ggplot2::geom_density(ggplot2::aes(x = degrees_2), color = 'Orange', fill = '#fcd997', alpha=0.4, bw = 1/nbins) + 
+  ggplot2::geom_vline(ggplot2::aes(xintercept = mean(degrees_2, na.rm = T)), color = 'orange', linetype = 'dashed', linewidth = 1) +
+    ggplot2::geom_vline(ggplot2::aes(xintercept = mean(degrees_1, na.rm = T)), color = 'blue', linetype = 'dashed', linewidth = 1) + 
+    ggplot2::coord_cartesian(xlim = c(0, 1))+ ggplot2::theme(legend.position="right")
 test = stats::t.test(degrees_1, degrees_2, alternative = 'two.sided')
 if (test$p.value < 1 - significance_level){
   print('There is a significant difference between the degree of both graphs')
@@ -168,10 +172,18 @@ if (test$p.value < 1 - significance_level){
   print('The betweeness centrality of the graphs are not significantly different')
   print(paste('p-value:', test$p.value))
 }
-}
+  }
+  return(list('degree_plot' = degree_plot, 'closeness_plot' = closeness_plot, 'betweenness_plot' = betweenness_plot))
 }
 
-#compare_statistics(network1 = graph_grants_people, network2 = graph_co_author, statistics = c('degree' = T, 'betweenness' = T))
+
+
+#print(compare_statistics(network1 = graph_grants_people, network2 = graph_knowledge, statistics = c('degree' = F,'closeness' = T, 'betweenness' = F))$closeness_plot, bins = 300)
+
+#igraph::E(graph_grants_people)$weight = 1
+#igraph::E(graph_knowledge)$weight = 1
+#max(quantile(igraph::closeness(graph_grants_people), c(.98), na.rm = T)*1.05, quantile(igraph::closeness(graph_knowledge), c(.98), na.rm = T)*1.05)
+#igraph::closeness(graph_grants_people)
 
 compare_actors = function(network1, network2, metric = 'betweenness'){
   print(paste('There are', length(intersect(igraph::V(network2)$name, igraph::V(network1)$name)), 'overlapping nodes in both networks'))
