@@ -117,17 +117,28 @@ ui <- dashboardPage(
                 withSpinner(plotOutput('QAPplot'), type = 4),
                 h4('Statistical differences between the networks'),
                 selectInput('statisticChoice', 'What statistics should be compared in the networks?', 
-                            choices = c('degree', 'closeness', 'betweenness'), multiple = T)),
-                actionButton('StatCompare', 'Run Analsyis'),
+                            choices = c('Degree', 'Closeness', 'Betweenness'), multiple = T)),
+                actionButton('StatCompare', 'Run Analysis'),
                 verbatimTextOutput('Stats'),
-                conditionalPanel("input.statisticChoice.includes('degree')", withSpinner(plotOutput('degree_plot'), type = 4)),
-                conditionalPanel("input.statisticChoice.includes('closeness')", withSpinner(plotOutput('closeness_plot'), type = 4)),
-                conditionalPanel("input.statisticChoice.includes('betweenness')", withSpinner(plotOutput('betweenness_plot'), type = 4)),
+                conditionalPanel("input.statisticChoice.includes('Degree')", withSpinner(plotOutput('degree_plot'), type = 4)),
+                conditionalPanel("input.statisticChoice.includes('Closeness')", withSpinner(plotOutput('closeness_plot'), type = 4)),
+                conditionalPanel("input.statisticChoice.includes('Betweenness')", withSpinner(plotOutput('betweenness_plot'), type = 4)),
                 h4('Most important actors in both networks:'),
                 selectInput('ActorMetric', 'What statistic should be used to determine the most important actors?', 
-                            choices = c('degree','closeness','betweenness'), selected = 'betweenness'),
+                            choices = c('Degree','Closeness','Betweenness'), selected = 'betweenness'),
+                numericInput('ActorNum', 'How many actors should be retrieved', 5, min = 1, max = NA),
                 actionButton('ActorComparison', 'Run Analysis'),
-                DT::dataTableOutput('DTActComp')
+                verbatimTextOutput('ActorCompText'),
+                withSpinner(DT::dataTableOutput('DTActorComp'), type = 4),
+                h4('Most important ties in both networks:'),
+                selectInput('BridgeMetric', 'What statistic should be used to determine the most important ties?', 
+                            choices = c('Absolute', 'Mean'), selected = 'mean'),
+                numericInput('BridgeNum', 'How many ties should be retrieved', 5, min = 1, max = NA),
+                checkboxGroupInput('BridgeVars', 'Extra choices', 
+                                   choices = c('Only local bridges should be considered' = 'Bridges', 'Infinite values should be discarded' = 'drop.infs')),
+                actionButton('BridgeComparison', 'Run Analysis'),
+                verbatimTextOutput('BridgeCompText'),
+                withSpinner(DT::dataTableOutput('DTBridgeComp'), type = 4),
       )
     )
   )
@@ -139,10 +150,17 @@ server <- function(input, output, session) {
   dataset <- reactiveVal(NULL)
   dataset2 = reactiveVal(NULL)
   
-  # Initialize shouldAnalyze to control when to run analysis
+  inet = reactiveVal(NULL)
+  inet2 = reactiveVal(NULL)
+  
+  # Initialize The reactive variables to control when to run analysis
   shouldAnalyze <- reactiveVal(FALSE)
   shouldQAPAnalyse = reactiveVal(F)
   shouldStatisticCompare = reactiveVal(FALSE)
+  shouldActorCompare = reactiveVal(FALSE)
+  shouldBridgeCompare = reactiveVal(FALSE)
+  buttonPressed = reactiveVal(FALSE)
+  shouldContinue = reactiveVal(FALSE)
   
   degree_plot <- reactiveVal(NULL)
   
@@ -150,9 +168,11 @@ server <- function(input, output, session) {
   observeEvent(input$file1, {
     inFile <- input$file1
     if (grepl("\\.csv$", inFile$name)) {
-      dataset(read.csv(inFile$datapath))  # Load CSV file
+      dataset(read.csv(inFile$datapath))# Load CSV file
+      inet(graph_from_data_frame(dataset(), directed = FALSE)) # Save as an igraph to save time on the conversion
     } else if (grepl("\\.(xlsx|xls)$", inFile$name)) {
       dataset(read_excel(inFile$datapath))  # Load Excel file
+      inet(graph_from_data_frame(dataset(), directed = FALSE)) # Save as an igraph to save time on the conversion
     }
   })
   
@@ -161,8 +181,10 @@ server <- function(input, output, session) {
     inFile <- input$file2
     if (grepl("\\.csv$", inFile$name)) {
       dataset2(read.csv(inFile$datapath))  # Load CSV file
+      inet2(graph_from_data_frame(dataset2(), directed = FALSE))
     } else if (grepl("\\.(xlsx|xls)$", inFile$name)) {
       dataset2(read_excel(inFile$datapath))  # Load Excel file
+      inet2(graph_from_data_frame(dataset2(), directed = FALSE))
     }
   })
   
@@ -171,6 +193,8 @@ server <- function(input, output, session) {
     input$algorithm
     shouldAnalyze(FALSE)
   })
+  
+  
   
   # Render uploaded data table
   output$dataTable <- DT::renderDataTable({
@@ -235,7 +259,7 @@ server <- function(input, output, session) {
       return()
     }
     req(dataset())
-    g <- graph_from_data_frame(dataset(), directed = FALSE)
+    g <- inet()
     
     # Simplify the graph to merge multiple edges and check for multi-edges
     g_simplified <- simplify(g)
@@ -259,7 +283,7 @@ server <- function(input, output, session) {
     
     
     req(dataset())
-    g <- graph_from_data_frame(dataset(), directed = FALSE)
+    g <- inet()
     result <- switch(input$algorithm,
                      "Fast Greedy" = cluster_fast_greedy(g),
                      "Louvain" = cluster_louvain(g),
@@ -363,38 +387,43 @@ server <- function(input, output, session) {
     shouldQAPAnalyse(TRUE)
   })
   
-  
+  # Get the qap test running
   QAP_test = eventReactive(input$QAPAnalysis, {
     req(input$QAPreps)
     req(shouldQAPAnalyse)
     req(dataset())
     req(dataset2())
-    g1 <- graph_from_data_frame(dataset(), directed = FALSE)
-    g2 <- graph_from_data_frame(dataset2(), directed = FALSE)
-    result = QAP_networks(g1, g2, reps = input$QAPreps)
+    g1 <- inet()
+    g2 <- inet2()
+    result = QAP_networks(g1, g2, reps = input$QAPreps, net1_name = gsub("\\.\\w+$", "", input$file1$name), net2_name = gsub("\\.\\w+$", "", input$file2$name))
     print(paste('Test statistic:', result$testval))
     result
   })
   
+  # Print the QAP test
   output$QAP = renderPrint({
     req(QAP_test())
     QAP_test()
   })
   
+  # Plot the output of the QAP test
   output$QAPplot = renderPlot({
     req(QAP_test())
     sna::plot.qaptest(QAP_test())
   })
   
+  # If the statistic for the statistical comparison changes, stop the constant analysis
   observe({
     input$statisticChoice
     shouldStatisticCompare(FALSE)
   })
   
+  # Start the iteration of the analysis once the button is pressed
   observeEvent(input$StatCompare, {
     shouldStatisticCompare(TRUE)
   })
   
+  # Load the values for the statistical comparisons once the button is pressed
   Statistical_comparisons = eventReactive(input$StatCompare, {
     req(input$StatCompare)
     req(shouldStatisticCompare())
@@ -409,93 +438,188 @@ server <- function(input, output, session) {
       )
     }
     statistics = c()
-    if ('degree' %in% input$statisticChoice){
-      statistics = c(statistics, 'degree' = T)
+    if ('Degree' %in% input$statisticChoice){
+      statistics = c(statistics, 'Degree' = T)
     } else {
-      statistics = c(statistics, 'degree' = F)
+      statistics = c(statistics, 'Degree' = F)
     }
-    if ('closeness' %in% input$statisticChoice){
-      statistics = c(statistics, 'closeness' = T)
+    if ('Closeness' %in% input$statisticChoice){
+      statistics = c(statistics, 'Closeness' = T)
     } else {
-      statistics = c(statistics, 'closeness' = F)
+      statistics = c(statistics, 'Closeness' = F)
     }
-    if ('betweenness' %in% input$statisticChoice){
-      statistics = c(statistics, 'betweenness' = T)
+    if ('Betweenness' %in% input$statisticChoice){
+      statistics = c(statistics, 'Betweenness' = T)
     } else {
-      statistics = c(statistics, 'betweenness' = F)
+      statistics = c(statistics, 'Betweenness' = F)
     }
-    g1 <- graph_from_data_frame(dataset(), directed = FALSE)
-    g2 <- graph_from_data_frame(dataset2(), directed = FALSE)
-    stats = compare_statistics(g1, g2, statistics = statistics)
+    g1 <- inet()
+    g2 <- inet2()
+    stats = compare_statistics(g1, g2, statistics = statistics, net1_name = gsub("\\.\\w+$", "", input$file1$name), net2_name = gsub("\\.\\w+$", "", input$file2$name))
   })
   
+  # Print the output of the statistical comparison
   output$Stats = renderPrint({
     req(Statistical_comparisons())
     Statistical_comparisons()
   })
   
+  # Retrieve the plot showing the density of the degrees in both networks
   degree_plot = eventReactive(input$StatCompare, {
     req(input$StatCompare)
     req(shouldStatisticCompare)
-    if ('degree' %in% input$statisticChoice){
-    g1 <- graph_from_data_frame(dataset(), directed = FALSE)
-    g2 <- graph_from_data_frame(dataset2(), directed = FALSE)
-    compare_statistics(g1, g2, statistics = c('degree' = T))$degree_plot
+    if ('Degree' %in% input$statisticChoice){
+    g1 <- inet()
+    g2 <- inet2()
+    compare_statistics(g1, g2, statistics = c('Degree' = T), net1_name = gsub("\\.\\w+$", "", input$file1$name), net2_name = gsub("\\.\\w+$", "", input$file2$name))$degree_plot
     } else{
       NULL
     }
   }, ignoreInit = T)
   
+  # Plot the denisty plot showing the degree in both networks
   output$degree_plot = renderPlot({
     req(degree_plot())
     print(degree_plot())
   })
   
+  # Retrieve the plot showing the density of the closeness in both networks
   closeness_plot = eventReactive(input$StatCompare, {
     req(input$StatCompare)
     req(shouldStatisticCompare)
-    if ('closeness' %in% input$statisticChoice){
-      g1 <- graph_from_data_frame(dataset(), directed = FALSE)
-      g2 <- graph_from_data_frame(dataset2(), directed = FALSE)
-      compare_statistics(g1, g2, statistics = c('closeness' = T))$closeness_plot
+    if ('Closeness' %in% input$statisticChoice){
+      g1 <- inet()
+      g2 <- inet2()
+      compare_statistics(g1, g2, statistics = c('Closeness' = T), net1_name = gsub("\\.\\w+$", "", input$file1$name), net2_name = gsub("\\.\\w+$", "", input$file2$name))$closeness_plot
     } else{
       NULL
     }
   }, ignoreInit = T)
   
+  # Plot the denisty plot showing the closeness in both networks
   output$closeness_plot = renderPlot({
     req(closeness_plot())
     print(closeness_plot())
   })
   
+  # Retrieve the plot showing the density of the betweenness in both networks
   betweenness_plot = eventReactive(input$StatCompare, {
     req(input$StatCompare)
     req(shouldStatisticCompare)
-    if ('betweenness' %in% input$statisticChoice){
-      g1 <- graph_from_data_frame(dataset(), directed = FALSE)
-      g2 <- graph_from_data_frame(dataset2(), directed = FALSE)
-      compare_statistics(g1, g2, statistics = c('betweenness' = T))$betweenness_plot
+    if ('Betweenness' %in% input$statisticChoice){
+      g1 <- inet()
+      g2 <- inet2()
+      compare_statistics(g1, g2, statistics = c('Betweenness' = T), net1_name = gsub("\\.\\w+$", "", input$file1$name), net2_name = gsub("\\.\\w+$", "", input$file2$name))$betweenness_plot
     } else{
       NULL
     }
   }, ignoreInit = T)
   
+  # Plot the denisty plot showing the betweenness in both networks
   output$betweenness_plot = renderPlot({
     req(betweenness_plot())
     print(betweenness_plot())
   })
   
+  # When the metric for the actor comparison changes set the compare to FALSE
   observe({
-    input$A
-    shouldStatisticCompare(FALSE)
+    input$ActorMetric
+    shouldActorCompare(FALSE)
   })
   
-  observeEvent(input$StatCompare, {
-    shouldStatisticCompare(TRUE)
+  # Execute the actor comparison when the button is pressed
+  observeEvent(input$ActorComparison, {
+    shouldActorCompare(TRUE)
   })
   
-  actor_df = eventReactive()
+  # Get the values for the actor comparison
+  actor_df = eventReactive(input$ActorComparison, {
+    req(dataset())
+    req(dataset2())
+    req(input$ActorMetric)
+    req(shouldActorCompare())
+    req(input$ActorNum)
+    g1 <- inet()
+    g2 <- inet2()
+    compare_actors(g1, g2, metric = input$ActorMetric, net1_name = gsub("\\.\\w+$", "", input$file1$name), net2_name = gsub("\\.\\w+$", "", input$file2$name), n_actors = input$ActorNum)
+  })
+  
+  # Show the print statements made during the Actor Comparisons
+  output$ActorCompText = renderPrint({
+    req(actor_df())
+    'Result:'
+  })
+  
+  # Show the table which shows the actors and their variables
+  output$DTActorComp = DT::renderDataTable({
+    req(actor_df())
+    actor_df()
+  }
+  )
+  
+  # When the metric for the bridge comparison changes set the compare to FALSE
+  observe({
+    input$BridgeMetric
+    shouldBridgeCompare(FALSE)
+  })
+  
+  # Execute the bridge comparison when the button is pressed
+  observeEvent(input$BridgeComparison, {
+    shouldBridgeCompare(TRUE)
+  })
+  
+  # Get the values for the bridge comparison
+  bridge_df = eventReactive(input$BridgeComparison, {
+    req(dataset())
+    req(dataset2())
+    req(input$BridgeMetric)
+    req(shouldBridgeCompare())
+    req(input$BridgeNum)
+    req(input$BridgeVars)
+    if (input$BridgeNum > igraph::ecount(inet())){
+      showModal(modalDialog(
+        title = "Too many edges selected",
+        paste('Too many edges were selected,', gsub("\\.\\w+$", "", input$file1$name),'Does not contain that many edges'),
+        easyClose = TRUE,
+        footer = ModalButton('Got it!')
+      ))
+      return()
+    } else if (input$BridgeNum > igraph::ecount(inet2())){
+      showModal(modalDialog(
+        title = "Too many edges selected",
+        paste('Too many edges were selected,', gsub("\\.\\w+$", "", input$file2$name),'Does not contain that many edges'),
+        easyClose = TRUE,
+        footer = ModalButton('Got it!')
+      ))
+      return()
+    }
+    
+    g1 <- inet()
+    g2 <- inet2()
+    withProgress(bridge_comp(g1, g2, method = input$BridgeMetric,
+                             net1_name = gsub("\\.\\w+$", "", input$file1$name),
+                             net2_name = gsub("\\.\\w+$", "", input$file2$name),
+                             n_actors = input$BridgeNum, 
+                             drop.inf = 'drop.infs' %in% input$BridgeVars,
+                             filter_bridge = 'Bridges' %in% input$BridgeVars),
+                 message = 'Calculating Edge Importancies...')
+  })
+  
+  # Show the print statements made during the Bridge Comparisons
+  output$BridgeCompText = renderPrint({
+    req(bridge_df())
+    'Result:'
+  })
+  
+  # Show the table which shows the bridges and their variables
+  output$DTBridgeComp = DT::renderDataTable({
+    req(bridge_df())
+    bridge_df()
+  }
+  )
 }
+
+
 
 # Run the Shiny application
 shinyApp(ui = ui, server = server)
