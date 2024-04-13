@@ -582,7 +582,7 @@ server <- function(input, output, session) {
         title = "Too many edges selected",
         paste('Too many edges were selected,', gsub("\\.\\w+$", "", input$file1$name),'Does not contain that many edges'),
         easyClose = TRUE,
-        footer = ModalButton('Got it!')
+        footer = modalButton('Got it!')
       ))
       return()
     } else if (input$BridgeNum > igraph::ecount(inet2())){
@@ -590,7 +590,7 @@ server <- function(input, output, session) {
         title = "Too many edges selected",
         paste('Too many edges were selected,', gsub("\\.\\w+$", "", input$file2$name),'Does not contain that many edges'),
         easyClose = TRUE,
-        footer = ModalButton('Got it!')
+        footer = modalButton('Got it!')
       ))
       return()
     }
