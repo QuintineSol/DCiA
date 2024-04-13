@@ -9,6 +9,7 @@ library(httr)        # For HTTP requests
 library(jsonlite)    # For JSON processing
 library(igraph)      # For network analysis (not explicitly used in provided snippet but may be needed)
 library(visNetwork)
+library(english)
 source(paste0(dirname(rstudioapi::getSourceEditorContext()$path), '/Comparison_script.R'))
 
 # Setting the Hugging Face API key (ensure this is securely managed in production)
