@@ -231,6 +231,61 @@ server <- function(input, output, session) {
     barplot(cugTest()$betweenness, names.arg = 1:length(cugTest()$betweenness), main = "Betweenness Centrality")
   })
   
+  # Reactive expression to handle API call for generating explanations
+  explanationOutput <- eventReactive(input$runCode, {
+    req(input$code)  # Ensure code is entered before proceeding
+    codeToRun <- input$code
+    
+    tryCatch({
+      evalEnv <- new.env()  # New environment for code evaluation
+      evalEnv$dataset <- dataset()  # Make dataset available in the environment
+      # Capture and collapse the output of the executed code
+      result <- capture.output(eval(parse(text = codeToRun), envir = evalEnv))
+      codeOutputStr <- paste(result, collapse = "\n")
+      
+      # Construct the prompt for the API
+      prompt <- paste0("Output:\n", codeOutputStr, 
+                       "\n\nPlease provide an elaborate explanation for output and definition about network analysis and their significance in plain text elaborate.")
+      
+      # Set up API request
+      api_url <- "https://api-inference.huggingface.co/models/google/flan-t5-xxl"
+      api_key <- Sys.getenv("HUGGINGFACE_API_KEY")
+      headers <- add_headers(`Authorization` = paste("Bearer", api_key), `Content-Type` = "application/json")
+      body <- toJSON(list(inputs = prompt, parameters = list(max_new_tokens = 512)), auto_unbox = TRUE)
+      
+      # Execute the API request
+      response <- POST(url = api_url, headers, body = body)
+      content <- content(response, "parsed")
+      
+      # Process the API response
+      if (response$status_code == 200) {
+        # Assuming content structure is correct, return the first item's text
+        if (!is.null(content[[1]])) {
+          return(as.character(content[[1]]))
+        } else {
+          return("Explanation found but unable to parse.")
+        }
+      } else {
+        return(sprintf("Failed to retrieve explanation. Status code: %s, Response: %s", response$status_code, rawToChar(response$content)))
+      }
+    }, error = function(e) {
+      return(sprintf("Error: %s", e$message))
+    })
+  })
+  
+  # Render the output of the executed code
+  output$codeOutput <- renderPrint({
+    req(input$runCode)  # Wait for the 'Run Code' button to be pressed
+    tryCatch({
+      evalEnv <- new.env()
+      evalEnv$dataset <- dataset()
+      result <- eval(parse(text = input$code), envir = evalEnv)
+      print(result)
+    }, error = function(e) {
+      cat(sprintf("Error in code execution: %s", e$message))
+    })
+  })
+  
   # Activate analysis when "Run Analysis" button is clicked
   observeEvent(input$runAnalysis, {
     shouldAnalyze(TRUE)
