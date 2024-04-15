@@ -20,14 +20,15 @@ ui <- dashboardPage(
                 menuItem("Introduction", tabName = "introduction"),
                 menuItem("Data Upload", tabName = "data_upload"),
                 menuItem("CUG Test", tabName = "cug_test"),
-                menuItem("Community Detection", tabName = "community_detection")
+                menuItem("Community Detection", tabName = "community_detection"),
+                menuItem("Data Export", tabName = "data_export")
     )
   ),
   dashboardBody(
     tags$head(
       tags$style(HTML("
-        .previous-button { position: fixed; top: 60px; left: 250px; z-index: 1050; }
-        .next-button { position: absolute; top: 60px; right: 20px; z-index: 100; }
+        .previous-button { position: fixed; bottom: 30px; left: 250px; z-index: 1050; }
+        .next-button { position: fixed; bottom: 30px; right: 20px; z-index: 100; }
       "))
     ),
     uiOutput("prevButtonUI"),
@@ -123,6 +124,21 @@ ui <- dashboardPage(
                 h4("Hugging Face Explanation"),
                 textOutput("hfExplanation")
               )
+      ),
+      tabItem(tabName = "data_export",
+              fluidPage(
+                h3("Data Export", align = "center"),
+                div(
+                  p("Here you can download your network and communities. You can use this feature to save the current state of your network for further analysis or sharing with collaborators."),
+                  downloadButton("downloadNetwork", "Network"),
+                  downloadButton("downloadMemberships", "Communities"),
+                  # Render error message only if there is an error
+                  conditionalPanel(
+                    condition = "output.errorMessage != ''",
+                    verbatimTextOutput("errorMessage", placeholder = TRUE)
+                  )
+                )
+              )
       )
     )
   )
@@ -132,6 +148,12 @@ ui <- dashboardPage(
 server <- function(input, output, session) {
   # Reactive value to store uploaded dataset
   dataset <- reactiveVal(NULL)
+  
+  # Reactive value to store community memberships
+  community_memberships <- reactiveVal(NULL)
+  
+  # Reactive value to store network object
+  network_object <- reactiveVal(NULL)
   
   # Initialize shouldAnalyze to control when to run analysis
   shouldAnalyze <- reactiveVal(FALSE)  
@@ -167,13 +189,13 @@ server <- function(input, output, session) {
   
   # Dynamically render the "Next" button
   output$nextButtonUI <- renderUI({
-    if (!is.null(input$sidebar) && input$sidebar != "community_detection") {  # Exclude on the last tab
+    if (!is.null(input$sidebar) && input$sidebar != "data_export") {  # Exclude on the last tab
       actionButton("nextTab", "Next", class = "next-button btn btn-primary")
     }
   })
   
   # Define the sequence of tabs
-  tabNames <- c("introduction", "data_upload", "cug_test", "community_detection")
+  tabNames <- c("introduction", "data_upload", "cug_test", "community_detection", "data_export")
   
   # Function to navigate to the next tab
   observeEvent(input$nextTab, {
@@ -324,6 +346,8 @@ server <- function(input, output, session) {
                      "Louvain" = cluster_louvain(g),
                      "Girvan-Newman" = cluster_edge_betweenness(g),
                      "Walktrap" = cluster_walktrap(g))
+    community_memberships(membership(result)) # Store community memberships
+    network_object(g) # Store network object
     list(g = g, result = result, modularity = modularity(result), memberships = membership(result))
   })
   
@@ -343,7 +367,7 @@ server <- function(input, output, session) {
     if (!is.null(analysisResult()$error)) {
       return(data.frame(Error = analysisResult()$error))
     } else {
-      memberships <- analysisResult()$memberships
+      memberships <- community_memberships()
       data.frame(Node = names(memberships), Community = memberships)
     }
   })
@@ -407,6 +431,42 @@ server <- function(input, output, session) {
   
   output$hfExplanation <- renderText({
     explanationOutput()
+  })
+  
+  # Function to export network data
+  output$downloadNetwork <- downloadHandler(
+    filename = function() {
+      paste("network", ".graphml", sep = "")
+    },
+    content = function(file) {
+      if (!is.null(network_object())) {
+        write_graph(network_object(), file, format = "graphml")
+      }
+    }
+  )
+  
+  # Function to export community memberships
+  output$downloadMemberships <- downloadHandler(
+    filename = function() {
+      paste("community_memberships", ".csv", sep = "")
+    },
+    content = function(file) {
+      if (!is.null(community_memberships())){
+        write.csv(data.frame(Node = names(community_memberships()), Community = community_memberships()), file, row.names = FALSE)
+      }
+    }
+  )
+  
+  output$errorMessage <- renderText({
+    if (is.null(network_object()) && is.null(community_memberships())) {
+      return("Error: No network and communities available. Please return to the 'Community Detection' tab.")
+    } else if (is.null(network_object())) {
+      return("Error: No network available. Please return to the 'Community Detection' tab.")
+    } else if (is.null(community_memberships())) {
+      return("Error: No communities available. Please return to the 'Community Detection' tab.")
+    } else {
+      return(NULL)
+    }
   })
 }
 
