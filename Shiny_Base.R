@@ -540,6 +540,23 @@ server <- function(input, output, session) {
     req(input$ActorMetric)
     req(shouldActorCompare())
     req(input$ActorNum)
+    if (input$ActorNum > igraph::vcount(inet())){
+      showModal(modalDialog(
+        title = "Too many nodes selected",
+        paste('Too many nodes were selected,', gsub("\\.\\w+$", "", input$file1$name),'does not contain that many nodes', '\nRequest was', input$ActorNum, 'nodes, whilst a maximum of', igraph::vcount(inet()), 'can be selected'),
+        easyClose = TRUE,
+        footer = modalButton('Got it!')
+      ))
+      return()
+    } else if (input$ActorNum > igraph::vcount(inet2())){
+      showModal(modalDialog(
+        title = "Too many nodes selected",
+        paste('Too many nodes were selected,', gsub("\\.\\w+$", "", input$file2$name),'does not contain that many nodes', '\nRequest was', input$ActorNum, 'nodes, whilst a maximum of', igraph::vcount(inet2()), 'can be selected'),
+        easyClose = TRUE,
+        footer = modalButton('Got it!')
+      ))
+      return()
+    }
     g1 <- inet()
     g2 <- inet2()
     compare_actors(g1, g2, metric = input$ActorMetric, net1_name = gsub("\\.\\w+$", "", input$file1$name), net2_name = gsub("\\.\\w+$", "", input$file2$name), n_actors = input$ActorNum)
@@ -576,11 +593,10 @@ server <- function(input, output, session) {
     req(input$BridgeMetric)
     req(shouldBridgeCompare())
     req(input$BridgeNum)
-    req(input$BridgeVars)
     if (input$BridgeNum > igraph::ecount(inet())){
       showModal(modalDialog(
         title = "Too many edges selected",
-        paste('Too many edges were selected,', gsub("\\.\\w+$", "", input$file1$name),'Does not contain that many edges'),
+        paste('Too many edges were selected,', gsub("\\.\\w+$", "", input$file1$name),'does not contain that many edges', '\nRequest was', input$BridgeNum, 'edges, whilst a maximum of', igraph::ecount(inet()), 'can be selected'),
         easyClose = TRUE,
         footer = modalButton('Got it!')
       ))
@@ -588,7 +604,7 @@ server <- function(input, output, session) {
     } else if (input$BridgeNum > igraph::ecount(inet2())){
       showModal(modalDialog(
         title = "Too many edges selected",
-        paste('Too many edges were selected,', gsub("\\.\\w+$", "", input$file2$name),'Does not contain that many edges'),
+        paste('Too many edges were selected,', gsub("\\.\\w+$", "", input$file2$name),'does not contain that many edges', '\nRequest was', input$BridgeNum, 'edges, whilst a maximum of', igraph::ecount(inet2()), 'can be selected'),
         easyClose = TRUE,
         footer = modalButton('Got it!')
       ))
