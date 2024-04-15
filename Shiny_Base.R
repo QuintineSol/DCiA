@@ -1,5 +1,6 @@
 # Load necessary libraries
 library(shiny)
+#library(shiny.router)
 library(shinycssloaders)
 library(shinydashboard)
 library(DT)          # For data tables
@@ -106,14 +107,25 @@ ui <- dashboardPage(
         tabItem(tabName = 'network_comparison',
                 fluidPage(
                 h3("Network comaprison Page", align = "center"),
-                h4('Upload a second network to compare to'),
-                       
+                p('This tab will be focused on the comparison of two different networks, thus, please Upload a second network to compare to'),
                 fileInput('file2', 'Choose CSV/Excel File', accept = c('.csv', '.xlsx', '.xls')),
                 DT::dataTableOutput("dataTable2"),  # Renders the uploaded data table
                 h4('Correlation in the ties between the networks'),
-                p('In this part of the analysis a QAP methodology will be used to compare the correlation between two selected networks'),
+                p('In this part of the analysis a QAP methodology will be used to compare the correlation between two selected networks.\nThe QAP methodology is introduced to make sure that each of the observations do no longer have the dependent property which is normally the case when working with network data.\nIn short the QAP uses a simulation of the network to be able to see what would happen to the observations would they have been independent of each other. From these observations, the QAP can generate a probability density function, which can be used to generate the probabilities of a certain observation.\nUsing the table below as an exmaple, the ones represent that there is a tie between a pair of nodes and a 0 representing that there is not, which represents the network next to it.'),
+                fluidRow(
+                  column(width = 6,
+                         tableOutput('QAPtable1')),
+                  column(width = 6, 
+                         plotOutput('QAPNet'))),
+                p('After the network is established like in the example, the vertices get ordered randomly, so in our example it can for instance be 6,3,1,4,2,5. Than we get the following table'),
+                tableOutput('QAPtable2'), 
+                p('Finally we use this randomised network to calculate the correlation with the other non-randomised network. This correlation value is the value for a singular value. After this is repeated for a set number of times, onne could get a good idea of the distributions of the underlying statistics, which could finally be used to determine whether there is any statistical significance or not'),
+                tags$head(tags$style(HTML("#QAPtable2 table {background-color: white; color = black; border: 1px solid black} .table>tbody>tr>td, .table>tbody>tr>th, .table>tfoot>tr>td, .table>tfoot>tr>th, .table>thead>tr>td, .table>thead>tr>th {border: 1px solid black} .my_table_aa01 th {text-align: center !important;}", media="screen", type="text/css"))),
+                tags$head(tags$style(HTML("#QAPtable1 table {background-color: white; color = black; border: 1px solid black} .table>tbody>tr>td, .table>tbody>tr>th, .table>tfoot>tr>td, .table>tfoot>tr>th, .table>thead>tr>td, .table>thead>tr>th {border: 1px solid black} .my_table_aa01 th {text-align: center !important;}", media="screen", type="text/css"))),
+                p('Therefore, the number of repetitions which are done in the simulation is a very important metric, as this determines how many times the network is randomised and thus how good the obtained probability density function represents the actual situation. Therefore, ideally the QAP model would run very often to get the best approximation possible. However, this comes with a trade-off in the time it takes before the model is completed, which is highly dependent on the size and complexity of each network. Thus, the exact optimal value differs for each network. Therefore, it is advised to start with a lower number, like 100, and build up slowly such that the best balance between execution time and accuracy can be found.'),
                 numericInput('QAPreps', 'Number of repetitions:', 100, min = 10, max = 10000),
                 actionButton('QAPAnalysis', 'Run Analysis'), 
+                HTML('<h5><b>Output:</b></h5>'),
                 verbatimTextOutput('QAP'),
                 withSpinner(plotOutput('QAPplot'), type = 4),
                 h4('Statistical differences between the networks'),
@@ -646,6 +658,35 @@ server <- function(input, output, session) {
     req(bridge_df())
     bridge_df()
   }
+  )
+  
+  output$QAPtable1 = renderTable({
+    table = data.frame(A_1 = c(0,1,1,0,0,1), A_2 = c(1,0,0,0,1,0), A_3 = c(1,0,0,1,1,1), A_4 = c(0,0,1,0,0,1), A_5 = c(0,1,1,0,0,1), A_6 = c(1,0,1,1,1,0))
+    rownames(table) = c('A<sub>1</sub>', 'A<sub>2</sub>', 'A<sub>3</sub>', 'A<sub>4</sub>', 'A<sub>5</sub>', 'A<sub>6</sub>')
+    colnames(table) = c('A<sub>1</sub>', 'A<sub>2</sub>', 'A<sub>3</sub>', 'A<sub>4</sub>', 'A<sub>5</sub>', 'A<sub>6</sub>')
+    table
+  }, rownames = T, digits = 0, sanitize.text.function = function(x) x, width = '100%'
+  )
+  
+  output$QAPNet = renderPlot({
+    net = igraph::make_empty_graph() %>% igraph::add_vertices(6) %>% igraph::add.edges(c(1,2, 1,3, 1,6, 2,5, 3,4, 3,5, 3,6, 4,6, 5,6)) %>% igraph::as.undirected()
+    plot(net, main = 'Example Network', 
+         vertex.size = 20,
+         edge.size =4/32,
+         edge.arrow.size = 0.2,
+         vertex.color = 'orange',
+         vertex.label.cex = 1,
+         vertex.label.color = 'black',
+         vertex.frame.color = "black",
+         layout = igraph::layout_with_graphopt)
+  })
+  
+  output$QAPtable2 = renderTable({
+    table = data.frame(A_1 = c(0,1,1,0,0,1), A_2 = c(1,0,0,0,1,0), A_3 = c(1,0,0,1,1,1), A_4 = c(0,0,1,0,0,1), A_5 = c(0,1,1,0,0,1), A_6 = c(1,0,1,1,1,0))
+    rownames(table) = c('A<sub>1</sub>', 'A<sub>2</sub>', 'A<sub>3</sub>', 'A<sub>4</sub>', 'A<sub>5</sub>', 'A<sub>6</sub>')
+    colnames(table) = c('A<sub>1</sub>', 'A<sub>2</sub>', 'A<sub>3</sub>', 'A<sub>4</sub>', 'A<sub>5</sub>', 'A<sub>6</sub>')
+    table[c('A<sub>6</sub>', 'A<sub>3</sub>', 'A<sub>1</sub>', 'A<sub>4</sub>', 'A<sub>2</sub>', 'A<sub>5</sub>'),c('A<sub>6</sub>', 'A<sub>3</sub>', 'A<sub>1</sub>', 'A<sub>4</sub>', 'A<sub>2</sub>', 'A<sub>5</sub>')]
+  }, rownames = T, digits = 0, sanitize.text.function = function(x) x, width = '50%'
   )
 }
 
