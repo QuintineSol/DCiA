@@ -396,7 +396,9 @@ server <- function(input, output, session) {
     req(dataset2())
     g1 <- inet()
     g2 <- inet2()
-    result = QAP_networks(g1, g2, reps = input$QAPreps, net1_name = gsub("\\.\\w+$", "", input$file1$name), net2_name = gsub("\\.\\w+$", "", input$file2$name))
+    result = QAP_networks(g1, g2, reps = input$QAPreps,
+                          net1_name = gsub("\\.\\w+$", "", input$file1$name),
+                          net2_name = gsub("\\.\\w+$", "", input$file2$name))
     print(paste('Test statistic:', result$testval))
     result
   })
@@ -456,7 +458,9 @@ server <- function(input, output, session) {
     }
     g1 <- inet()
     g2 <- inet2()
-    stats = compare_statistics(g1, g2, statistics = statistics, net1_name = gsub("\\.\\w+$", "", input$file1$name), net2_name = gsub("\\.\\w+$", "", input$file2$name))
+    stats = compare_statistics(g1, g2, statistics = statistics,
+                               net1_name = gsub("\\.\\w+$", "", input$file1$name),
+                               net2_name = gsub("\\.\\w+$", "", input$file2$name))
   })
   
   # Print the output of the statistical comparison
@@ -472,7 +476,9 @@ server <- function(input, output, session) {
     if ('Degree' %in% input$statisticChoice){
     g1 <- inet()
     g2 <- inet2()
-    compare_statistics(g1, g2, statistics = c('Degree' = T), net1_name = gsub("\\.\\w+$", "", input$file1$name), net2_name = gsub("\\.\\w+$", "", input$file2$name))$degree_plot
+    compare_statistics(g1, g2, statistics = c('Degree' = T),
+                       net1_name = gsub("\\.\\w+$", "", input$file1$name),
+                       net2_name = gsub("\\.\\w+$", "", input$file2$name))$degree_plot
     } else{
       NULL
     }
@@ -491,7 +497,9 @@ server <- function(input, output, session) {
     if ('Closeness' %in% input$statisticChoice){
       g1 <- inet()
       g2 <- inet2()
-      compare_statistics(g1, g2, statistics = c('Closeness' = T), net1_name = gsub("\\.\\w+$", "", input$file1$name), net2_name = gsub("\\.\\w+$", "", input$file2$name))$closeness_plot
+      compare_statistics(g1, g2, statistics = c('Closeness' = T),
+                         net1_name = gsub("\\.\\w+$", "", input$file1$name),
+                         net2_name = gsub("\\.\\w+$", "", input$file2$name))$closeness_plot
     } else{
       NULL
     }
@@ -510,7 +518,9 @@ server <- function(input, output, session) {
     if ('Betweenness' %in% input$statisticChoice){
       g1 <- inet()
       g2 <- inet2()
-      compare_statistics(g1, g2, statistics = c('Betweenness' = T), net1_name = gsub("\\.\\w+$", "", input$file1$name), net2_name = gsub("\\.\\w+$", "", input$file2$name))$betweenness_plot
+      compare_statistics(g1, g2, statistics = c('Betweenness' = T),
+                         net1_name = gsub("\\.\\w+$", "", input$file1$name),
+                         net2_name = gsub("\\.\\w+$", "", input$file2$name))$betweenness_plot
     } else{
       NULL
     }
@@ -559,7 +569,10 @@ server <- function(input, output, session) {
     }
     g1 <- inet()
     g2 <- inet2()
-    compare_actors(g1, g2, metric = input$ActorMetric, net1_name = gsub("\\.\\w+$", "", input$file1$name), net2_name = gsub("\\.\\w+$", "", input$file2$name), n_actors = input$ActorNum)
+    compare_actors(g1, g2, metric = input$ActorMetric,
+                   net1_name = gsub("\\.\\w+$", "", input$file1$name),
+                   net2_name = gsub("\\.\\w+$", "", input$file2$name),
+                   n_actors = input$ActorNum)
   })
   
   # Show the print statements made during the Actor Comparisons
