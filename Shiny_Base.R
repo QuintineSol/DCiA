@@ -8,6 +8,7 @@ library(httr)        # For HTTP requests
 library(jsonlite)    # For JSON processing
 library(igraph)      # For network analysis (not explicitly used in provided snippet but may be needed)
 library(visNetwork)
+library(ggplot2)
 
 # Setting the Hugging Face API key (ensure this is securely managed in production)
 Sys.setenv(HUGGINGFACE_API_KEY = "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")
@@ -19,6 +20,7 @@ ui <- dashboardPage(
     sidebarMenu(id = "sidebar",
                 menuItem("Introduction", tabName = "introduction"),
                 menuItem("Data Upload", tabName = "data_upload"),
+                menuItem("Network Dashboard", tabName = "dashboard"),
                 menuItem("CUG Test", tabName = "cug_test"),
                 menuItem("Community Detection", tabName = "community_detection")
     )
@@ -52,6 +54,53 @@ ui <- dashboardPage(
                        DT::dataTableOutput("dataTable")  # Renders the uploaded data table
                 )
               )
+      ),
+      tabItem(tabName = "dashboard",
+               fluidPage(
+                   column(width = 12, 
+                          h1("Network Dashboard", align = "center"),
+                          p("Now that a network has been imported, it is time to get a better understanding of its characteristics. The current page allows for a quick and comprehensive overview of your network through a variety of statistics, findings, and visualizations. The dashboard is designed to empower the laymen that have access to network data. Getting a better understanding of the network starts with a visual inspection of its structure. Therefore, the network is displayed in the interactive visualization below."),
+                          visNetworkOutput("networkPlot1", height = "350px"),
+                          p("Although visualizing the network serves as a useful method to obtain a holistic view of the network's structure and connections, it only scratches the surface of what can be discovered. Through further exploration with statistical measures and thus representing network characteristics as numbers, we can extract meaningful patterns, trends, and relationships that may not be immediately apparent from the visualization alone. These insights can help us better understand the underlying dynamics of the network, identify key nodes or clusters, detect anomalies or trends over time, and make informed decisions to optimize network performance or address specific challenges."),
+                          fluidRow(
+                           # More explanation on what the plot represent HERE
+                           column(width = 3, 
+                                  plotOutput("CountPlot", width = "100%", height = "300px")
+                                  ),
+                           column(width = 3, 
+                                  plotOutput("ScorePlot", width = "100%", height = "300px")
+                                  ),
+                           column(width = 3, 
+                                  plotOutput("DistancePlot", width = "100%", height = "300px")
+                                  ),
+                           column(width = 3,
+                                  plotOutput("CentralizationPlot", width = "100%", height = "300px"))
+                         ),
+                         h3("Exploring Vertex Level Indices"),
+                         p("The following section delves into visualizations of vertex-level indices, otherwise known as centrality measures, providing valuable insights into the overall structure and characteristics of the network. They concerns statistical numbers about the actor present in the network. There is a bit more flexibility here. This means that can choose the centrality measure of interest, allowing you to gain a deeper understanding of its relevance in the provided network."),
+                         
+                         h4("Histogram Analysis"),
+                         p("Histograms offer a comprehensive view of the distribution of vertex-level indices or centralities across the entire network. By visualizing the frequency of values within predefined bins, histograms enable you to identify the range, skewness, and outliers of the distribution."),
+                         
+                         h4("Boxplot Analysis"),
+                         p("Boxplots provide a concise summary of the distribution and variability of vertex-level indices, emphasizing key statistical measures such as the median, quartiles, and outliers."),
+                         fluidRow(
+                           column(width = 12,
+                                  selectInput("centrality", "Choose the centrality measure of interest:",
+                                  choices = c("Degree", "Betweenness", "Closeness", "Eccentricity"),
+                                  selected = "Degree"),
+                                  align = "center"),
+                           column(width = 6, 
+                                  plotOutput("DistPlot", width = "100%", height = "350px")
+                                  ),
+                           column(width = 6, 
+                                  plotOutput("BoxPlot", width = "100%", height = "350px")
+                           ),
+                                  
+                         )
+                   )
+               
+           )
       ),
       tabItem(tabName = "cug_test",
               fluidPage(
@@ -173,7 +222,7 @@ server <- function(input, output, session) {
   })
   
   # Define the sequence of tabs
-  tabNames <- c("introduction", "data_upload", "cug_test", "community_detection")
+  tabNames <- c("introduction", "data_upload", "dashboard", "cug_test", "community_detection")
   
   # Function to navigate to the next tab
   observeEvent(input$nextTab, {
@@ -379,6 +428,227 @@ server <- function(input, output, session) {
         visInteraction(navigationButtons = TRUE) %>%
         visEdges(smooth = FALSE) 
     }
+  })
+  
+  # Dashboard Network Plot
+  output$networkPlot1 <- renderVisNetwork({
+      req(dataset())
+      g <- graph_from_data_frame(dataset(), directed = FALSE)
+      
+      # Set the color of the node
+      V(g)$color <- "#1bbbff"
+      
+      visNetwork::visIgraph(g) %>%
+        visIgraphLayout(layout = "layout_with_fr") %>%
+        visNodes(color = list(background = V(g)$color, border = "#2b2b2b", highlight = "#1F51FF"), 
+                 shadow = list(enabled = TRUE, size = 10, x = 0, y = 0)) %>%
+        visEdges(
+          # arrows = 'to',
+          color = list(color = "#cccccc", highlight = "#FF69B4"),
+          shadow = list(enabled = FALSE)
+        ) %>%
+        visOptions(highlightNearest = list(enabled = TRUE, degree = 1, hover = TRUE), 
+                   nodesIdSelection = list(enabled = TRUE, style = "width: 150px;")) %>%
+        visLayout(randomSeed = 123) %>%
+        visInteraction(navigationButtons = TRUE) %>%
+        visEdges(smooth = FALSE) 
+    }
+  )
+  
+  # Graph Indices Count Plot
+  output$CountPlot <- renderPlot({
+    req(dataset())
+    g <- graph_from_data_frame(dataset(), directed = FALSE)
+    vertex_count <- igraph::vcount(g)
+    edge_count <- igraph::ecount(g)
+    
+    scores <- cbind(edge_count, vertex_count)
+    distances <- cbind(edge_count, vertex_count)
+    
+    plot_df <- data.frame(
+      Category = c("Edge", "Vertex"),
+      Counts = c(edge_count, vertex_count)
+    )
+  
+    ggplot(plot_df, aes(x = Counts, y = Category, fill = Category)) +
+      geom_bar(stat = "identity") +
+      scale_fill_manual(values = c("Edge" = "#1bbbff", "Vertex" = "#FF69B4"), name = "Category") +
+      labs(x = "Counts", y = "Category", title = "Horizontal Bar Chart - Counts") +
+      theme_minimal() +
+      theme(
+        legend.position = "top",
+        plot.title = element_text(hjust = 0.5), # Center the plot title
+        plot.margin = margin(10, 30, 10, 10) # Adjust plot margins
+      )
+    
+  })
+  
+  # Graph Indices Score Plot
+  output$ScorePlot <- renderPlot({
+    req(dataset())
+    g <- graph_from_data_frame(dataset(), directed = FALSE)
+    density <- igraph::edge_density(g)
+    transitivity <- igraph::transitivity(g)
+    
+    plot_df <- data.frame(
+      Category = c("Density", "Transitivity"),
+      Scores = c(density, transitivity)
+    )
+    
+    ggplot(plot_df, aes(x = Scores, y = Category, fill = Category)) +
+      geom_bar(stat = "identity") +
+      scale_fill_manual(values = c("Density" = "#1bbbff", "Transitivity" = "#FF69B4"), name = "Category") +
+      labs(x = "Score", y = "Category", title = "Horizontal Bar Chart - Scores") +
+      theme_minimal() +
+      theme(
+        legend.position = "top",
+        plot.title = element_text(hjust = 0.5), # Center the plot title
+        plot.margin = margin(10, 30, 10, 10) # Adjust plot margins
+      ) +
+      coord_cartesian(xlim = c(0, 1)) + # Adjust x-axis limits
+      coord_flip() # Flip the coordinates to make the bars vertical
+  })
+   
+  # Graph Indices Distance Plot
+  
+  output$DistancePlot <- renderPlot({
+    req(dataset())
+    g <- graph_from_data_frame(dataset(), directed = FALSE)
+    
+    mean_dist <- igraph::mean_distance(g)
+    radius <- igraph::radius(g)
+    diameter <- igraph::diameter(g)
+    
+    plot_df <- data.frame(
+      Category = c("Mean Distance", "Radius", "Diameter"),
+      Distances = c(mean_dist, radius, diameter)
+    )
+    
+    ggplot(plot_df, aes(x = Distances, y = Category, fill = Category)) +
+      geom_bar(stat = "identity") +
+      scale_fill_manual(values = c("Mean Distance" = "#1bbbff", "Radius" = "#FF69B4", "Diameter" = "#A9A9A9"), name = "Category") +
+      labs(x = "Distance", y = "Category", title = "Horizontal Bar Chart - Distances") +
+      theme_minimal() +
+      theme(
+        legend.position = "top",
+        plot.title = element_text(hjust = 0.5), # Center the plot title
+        plot.margin = margin(10, 30, 10, 10) # Adjust plot margins
+      ) +
+      coord_cartesian(xlim = c(0, max(plot_df$Distances))) # Adjust x-axis limits
+  })
+
+  
+  # Graph Indices Centralization Plot
+  
+  output$CentralizationPlot <- renderPlot({
+    req(dataset())
+    g <- graph_from_data_frame(dataset(), directed = FALSE)
+    
+    betweenness_centralization <- igraph::centr_betw(g, directed = FALSE)$centralization
+    closeness_centralization <- igraph::centr_clo(g, mode = 'out')$centralization
+    degree_centralization <- igraph::centr_degree(g, mode = 'all')$centralization
+    eigen_centralization <- igraph::centr_eigen(g, directed = FALSE)$centralization
+    
+    plot_df <- data.frame(
+      Category = c("Betweenness", "Closeness", "Degree", "Eigenvector"),
+      Centralization = c(betweenness_centralization,
+                         closeness_centralization,
+                         degree_centralization, 
+                         eigen_centralization)
+    )
+    
+    ggplot(plot_df, aes(x = Centralization, y = Category, fill = Category)) +
+      geom_bar(stat = "identity") +
+      scale_fill_manual(values = c("Betweenness" = "#1bbbff",
+                                   "Closeness" = "#FF69B4",
+                                   "Degree" = "#A9A9A9",
+                                   "Eigenvector" = "#1F51FF"
+      ), 
+      name = "Category") +
+      labs(x = "Centralization", y = "Category", title = "Horizontal Bar Chart - Centralization") +
+      theme_minimal() +
+      theme(
+        legend.position = "top",
+        plot.title = element_text(hjust = 0.5), # Center the plot title
+        plot.margin = margin(10, 30, 10, 10) # Adjust plot margins
+      ) +
+      coord_cartesian(xlim = c(0, max(plot_df$Centralization))) + # Adjust x-axis limits
+      coord_flip() # Flip the coordinates to make the bars vertical
+  })
+  
+  # Distribution Plot
+  output$DistPlot <- renderPlot({
+    req(dataset())
+    g <- graph_from_data_frame(dataset(), directed = FALSE)
+    
+    if (input$centrality == "Degree"){
+      result = igraph::degree(g, mode = "all")
+      binwidth = 0.25
+    }
+    
+    if (input$centrality == "Betweenness"){
+      result = igraph::betweenness(g, directed = FALSE, normalized = TRUE)
+      binwidth = 0.01
+    }
+    
+    if (input$centrality == "Closeness"){
+      result = igraph::closeness(g, mode = "all")
+      binwidth = 0.1
+    }
+    
+    if (input$centrality == "Eccentricity"){
+      result = igraph::eccentricity(g, mode = 'all')
+      binwidth = 0.1
+    }
+
+    # Create a data frame containing the centrality measures
+    centrality_df <- data.frame(Centrality = result)
+    
+    # Create a histogram using ggplot2
+    ggplot(centrality_df, aes(x = Centrality)) +
+      geom_histogram(binwidth = binwidth, fill = "#1bbbff", alpha = 1) +
+      labs(x = input$centrality, y = "Frequency", title = "Centrality Distribution Histogram") +
+      theme_minimal() +
+      theme(
+        legend.position = "top",
+        plot.title = element_text(hjust = 0.5), # Center the plot title
+      )
+  })
+  
+  # Centrality Boxplots
+  
+  output$BoxPlot <- renderPlot({
+    req(dataset())
+    g <- graph_from_data_frame(dataset(), directed = FALSE)
+    
+    if (input$centrality == "Degree"){
+      result = igraph::degree(g, mode = "all")
+    }
+    
+    if (input$centrality == "Betweenness"){
+      result = igraph::betweenness(g, directed = FALSE, normalized = TRUE)
+    }
+    
+    if (input$centrality == "Closeness"){
+      result = igraph::closeness(g, mode = "all")
+    }
+    
+    if (input$centrality == "Eccentricity"){
+      result = igraph::eccentricity(g, mode = 'all')
+    }
+    
+    # Create a data frame containing the centrality measures
+    centrality_df <- data.frame(Centrality = result)
+    
+    # Create a histogram using ggplot2
+    ggplot(centrality_df, aes(x = Centrality)) +
+      geom_boxplot(fill = "#1bbbff", alpha = 1) +
+      labs(x = input$centrality, y = "Frequency", title = "Centrality Boxplots") +
+      theme_minimal() +
+      theme(
+        legend.position = "top",
+        plot.title = element_text(hjust = 0.5), # Center the plot title
+      )
   })
   
   explanationOutput <- eventReactive(input$runAnalysis, {
