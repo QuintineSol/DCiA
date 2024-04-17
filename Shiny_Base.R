@@ -27,15 +27,15 @@ ui <- dashboardPage(
   dashboardBody(
     tags$head(
       tags$style(HTML("
-        .previous-button { position: fixed; bottom: 30px; left: 250px; z-index: 1050; }
-        .next-button { position: fixed; bottom: 30px; right: 20px; z-index: 100; }
+        .previous-button { position: absolute; top: 80px; left: 250px; z-index: 1050; }
+        .next-button { position: absolute; top: 80px; right: 20px; z-index: 100; }
       "))
     ),
     uiOutput("prevButtonUI"),
     uiOutput("nextButtonUI"),
     tabItems(
       tabItem(tabName = "introduction",
-              fluidRow(
+              fluidPage(
                 column(width = 12,
                        wellPanel(
                          h1("Welcome!", align = "center"),
@@ -46,7 +46,7 @@ ui <- dashboardPage(
               )
       ),
       tabItem(tabName = "data_upload",
-              fluidRow(
+              fluidPage(
                 column(width = 12,
                        h3("Data Upload Page", align = "center"),
                        fileInput('file1', 'Choose CSV/Excel File', accept = c('.csv', '.xlsx', '.xls')),
