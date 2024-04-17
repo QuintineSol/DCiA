@@ -179,8 +179,8 @@ ui <- dashboardPage(
                 verbatimTextOutput('BridgeCompText'),
                 withSpinner(DT::dataTableOutput('DTBridgeComp'), type = 4),
 
-              )
-      ),
+              ),
+
       tabItem(tabName = "data_export",
               fluidPage(
                 h3("Data Export", align = "center"),
@@ -194,7 +194,7 @@ ui <- dashboardPage(
                     verbatimTextOutput("errorMessage", placeholder = TRUE)
                     )
                 )
-
+              ),
       )
     )
   )
@@ -284,7 +284,7 @@ server <- function(input, output, session) {
   
   # Dynamically render the "Next" button
   output$nextButtonUI <- renderUI({
-    if (!is.null(input$sidebar) && input$sidebar != "network_comparison") {  # Exclude on the last tab
+    if (!is.null(input$sidebar) && input$sidebar != "data_export") {  # Exclude on the last tab
       actionButton("nextTab", "Next", class = "next-button btn btn-primary")
     }
   })
@@ -596,7 +596,6 @@ server <- function(input, output, session) {
   
   # Load the values for the statistical comparisons once the button is pressed
   Statistical_comparisons = eventReactive(input$StatCompare, {
-    req(input$StatCompare)
     req(shouldStatisticCompare())
     req(dataset())
     req(dataset2())
