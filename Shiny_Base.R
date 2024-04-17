@@ -25,7 +25,8 @@ ui <- dashboardPage(
                 menuItem("Data Upload", tabName = "data_upload"),
                 menuItem("CUG Test", tabName = "cug_test"),
                 menuItem("Community Detection", tabName = "community_detection"),
-                menuItem("Network Comparison", tabName = 'network_comparison')
+                menuItem("Network Comparison", tabName = 'network_comparison'),
+                menuItem("Data Export", tabName = "data_export")
     )
   ),
   dashboardBody(
@@ -177,6 +178,23 @@ ui <- dashboardPage(
                 actionButton('BridgeComparison', 'Run Analysis'),
                 verbatimTextOutput('BridgeCompText'),
                 withSpinner(DT::dataTableOutput('DTBridgeComp'), type = 4),
+
+              )
+      ),
+      tabItem(tabName = "data_export",
+              fluidPage(
+                h3("Data Export", align = "center"),
+                div(
+                  p("Here you can download your network and communities. You can use this feature to save the current state of your network for further analysis or sharing with collaborators."),
+                  downloadButton("downloadNetwork", "Network"),
+                  downloadButton("downloadMemberships", "Communities"),
+                  # Render error message only if there is an error
+                  conditionalPanel(
+                    condition = "output.errorMessage != ''",
+                    verbatimTextOutput("errorMessage", placeholder = TRUE)
+                    )
+                )
+
       )
     )
   )
@@ -200,7 +218,18 @@ server <- function(input, output, session) {
   buttonPressed = reactiveVal(FALSE)
   shouldContinue = reactiveVal(FALSE)
   
+
   degree_plot <- reactiveVal(NULL)
+
+  # Reactive value to store community memberships
+  community_memberships <- reactiveVal(NULL)
+  
+  # Reactive value to store network object
+  network_object <- reactiveVal(NULL)
+  
+  # Initialize shouldAnalyze to control when to run analysis
+  shouldAnalyze <- reactiveVal(FALSE)  
+
   
   # Observe file upload and update `dataset`
   observeEvent(input$file1, {
@@ -261,7 +290,8 @@ server <- function(input, output, session) {
   })
   
   # Define the sequence of tabs
-  tabNames <- c("introduction", "data_upload", "cug_test", "community_detection", "network_comparison")
+  tabNames <- c("introduction", "data_upload", "cug_test", "community_detection", "network_comparison", "data_export")
+
 
   
   # Function to navigate to the next tab
@@ -425,7 +455,9 @@ server <- function(input, output, session) {
                      "Louvain" = cluster_louvain(g),
                      "Girvan-Newman" = cluster_edge_betweenness(g),
                      "Walktrap" = cluster_walktrap(g))
-    
+
+    community_memberships(membership(result)) # Store community memberships
+    network_object(g) # Store network object
     list(g = g, result = result, modularity = modularity(result), memberships = membership(result))
   })
   
@@ -447,7 +479,7 @@ server <- function(input, output, session) {
     if (!is.null(analysisResult()$error)) {
       return(data.frame(Error = analysisResult()$error))
     } else {
-      memberships <- analysisResult()$memberships
+      memberships <- community_memberships()
       data.frame(Node = names(memberships), Community = memberships)
     }
   })
@@ -518,6 +550,7 @@ server <- function(input, output, session) {
     explanationOutput()
   })
   
+
   # Activate the QAP analysis when "Run Analysis" button is clicked
   observeEvent(input$QAPAnalysis, {
     shouldQAPAnalyse(TRUE)
@@ -811,6 +844,43 @@ server <- function(input, output, session) {
     table[c('A<sub>6</sub>', 'A<sub>3</sub>', 'A<sub>1</sub>', 'A<sub>4</sub>', 'A<sub>2</sub>', 'A<sub>5</sub>'),c('A<sub>6</sub>', 'A<sub>3</sub>', 'A<sub>1</sub>', 'A<sub>4</sub>', 'A<sub>2</sub>', 'A<sub>5</sub>')]
   }, rownames = T, digits = 0, sanitize.text.function = function(x) x, width = '50%'
   )
+
+  # Function to export network data
+  output$downloadNetwork <- downloadHandler(
+    filename = function() {
+      paste("network", ".graphml", sep = "")
+    },
+    content = function(file) {
+      if (!is.null(network_object())) {
+        write_graph(network_object(), file, format = "graphml")
+      }
+    }
+  )
+  
+  # Function to export community memberships
+  output$downloadMemberships <- downloadHandler(
+    filename = function() {
+      paste("community_memberships", ".csv", sep = "")
+    },
+    content = function(file) {
+      if (!is.null(community_memberships())){
+        write.csv(data.frame(Node = names(community_memberships()), Community = community_memberships()), file, row.names = FALSE)
+      }
+    }
+  )
+
+  output$errorMessage <- renderText({
+    if (is.null(network_object()) && is.null(community_memberships())) {
+      return("Error: No network and communities available. Please return to the 'Community Detection' tab.")
+    } else if (is.null(network_object())) {
+      return("Error: No network available. Please return to the 'Community Detection' tab.")
+    } else if (is.null(community_memberships())) {
+      return("Error: No communities available. Please return to the 'Community Detection' tab.")
+    } else {
+      return(NULL)
+    }
+  })
+
 }
 
 
