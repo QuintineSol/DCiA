@@ -68,14 +68,6 @@ ui <- dashboardPage(
                   p("The Conditional Uniform Graph (CUG) test is a statistical method used to measure the degree of centralization of edges in a network. Centralization refers to the extent to which a network's connectivity is concentrated around a few edges or nodes. In the context of the CUG test, we specifically examine betweenness centrality, which quantifies the importance of individual edges in facilitating communication between other nodes in the network."),
                   p("By conducting the CUG test, you can gain insights into the structural properties of your network and identify key edges that play a significant role in connecting different components. This information is valuable for understanding the flow of information, identifying potential bottlenecks, and optimizing network efficiency."),
                   actionButton("runCUG", "Run CUG Test"),
-                  fluidRow(
-                    column(width = 6,
-                           plotOutput("networkPlot", width = "100%", height = "400px")
-                    ),
-                    column(width = 6,
-                           plotOutput("betweennessPlot", width = "100%", height = "400px")
-                    )
-                  ),
                   h4("CUG Test Results"),
                   verbatimTextOutput("cugTestOutput"),
                   h4("Hugging Face Explanation"),
@@ -334,20 +326,6 @@ server <- function(input, output, session) {
   # Render the explanation text obtained from the Hugging Face API
   output$hfExplanationCUG <- renderText({
     explanationOutput()  # Use the existing reactive expression for Hugging Face explanation
-  })
-  
-  # Generate network plot before CUG test
-  output$networkPlot <- renderPlot({
-    req(dataset())
-    n <- intergraph::asNetwork(graph_from_data_frame(dataset(), directed = FALSE))
-    plot(n, edge.width = cugTest()$betweenness * 10, edge.color = "blue")
-  })
-  
-  # Generate betweenness centrality plot after CUG test
-  output$betweennessPlot <- renderPlot({
-    req(input$runCUG)
-    req(dataset())
-    barplot(cugTest()$betweenness, names.arg = 1:length(cugTest()$betweenness), main = "Betweenness Centrality")
   })
   
   # Reactive expression to handle API call for generating explanations
