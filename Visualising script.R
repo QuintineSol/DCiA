@@ -1,4 +1,5 @@
-load('Data/networks.RData');load('Data/graphs.RData')
+setwd()
+load(paste0(dirname(rstudioapi::getSourceEditorContext()$path), '/Data/networks.RData'));load(paste0(dirname(rstudioapi::getSourceEditorContext()$path),'/Data/graphs.RData'))
 
 network_co_author
 
