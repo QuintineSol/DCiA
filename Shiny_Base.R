@@ -1,5 +1,7 @@
 # Load necessary libraries
 library(shiny)
+#library(shiny.router)
+library(shinycssloaders)
 library(shinydashboard)
 library(DT)          # For data tables
 library(readxl)      # For reading Excel files
@@ -9,6 +11,8 @@ library(jsonlite)    # For JSON processing
 library(igraph)      # For network analysis (not explicitly used in provided snippet but may be needed)
 library(visNetwork)
 library(ggplot2)
+library(english)
+source(paste0(dirname(rstudioapi::getSourceEditorContext()$path), '/Comparison_script.R'))
 
 # Setting the Hugging Face API key (ensure this is securely managed in production)
 Sys.setenv(HUGGINGFACE_API_KEY = "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")
@@ -22,14 +26,16 @@ ui <- dashboardPage(
                 menuItem("Data Upload", tabName = "data_upload"),
                 menuItem("Network Dashboard", tabName = "dashboard"),
                 menuItem("CUG Test", tabName = "cug_test"),
-                menuItem("Community Detection", tabName = "community_detection")
+                menuItem("Community Detection", tabName = "community_detection"),
+                menuItem("Network Comparison", tabName = 'network_comparison'),
+                menuItem("Data Export", tabName = "data_export")
     )
   ),
   dashboardBody(
     tags$head(
       tags$style(HTML("
         .previous-button { position: fixed; top: 60px; left: 250px; z-index: 1050; }
-        .next-button { position: absolute; top: 60px; right: 20px; z-index: 100; }
+        .next-button { position: fixed; top: 60px; right: 20px; z-index: 100; }
       "))
     ),
     uiOutput("prevButtonUI"),
@@ -111,14 +117,6 @@ ui <- dashboardPage(
                   p("The Conditional Uniform Graph (CUG) test is a statistical method used to measure the degree of centralization of edges in a network. Centralization refers to the extent to which a network's connectivity is concentrated around a few edges or nodes. In the context of the CUG test, we specifically examine betweenness centrality, which quantifies the importance of individual edges in facilitating communication between other nodes in the network."),
                   p("By conducting the CUG test, you can gain insights into the structural properties of your network and identify key edges that play a significant role in connecting different components. This information is valuable for understanding the flow of information, identifying potential bottlenecks, and optimizing network efficiency."),
                   actionButton("runCUG", "Run CUG Test"),
-                  fluidRow(
-                    column(width = 6,
-                           plotOutput("networkPlot", width = "100%", height = "400px")
-                    ),
-                    column(width = 6,
-                           plotOutput("betweennessPlot", width = "100%", height = "400px")
-                    )
-                  ),
                   h4("CUG Test Results"),
                   verbatimTextOutput("cugTestOutput"),
                   h4("Hugging Face Explanation"),
@@ -152,7 +150,7 @@ ui <- dashboardPage(
                   ),
                   p("By interpreting the modularity score in the context of your specific network, you can uncover insights into its underlying structure and dynamics. Let's have a look your network's modulariy score:")
                 ),
-                verbatimTextOutput("modularityOutput"),
+                withSpinner(verbatimTextOutput("modularityOutput"), type = 4),
                 h4("Community Memberships"),
                 div(
                   p("Community membership assigns each node in the network to one or more groups, based on the structure of connections. This reflects the node's role and position within the overall network."),
@@ -163,15 +161,81 @@ ui <- dashboardPage(
                   ),
                   p("Community membership insights provide a granular view of how individuals or nodes are grouped within the network, offering a foundation for targeted strategies and initiatives. Here are the memberships found in your data:"),
                 ),
-                DT::dataTableOutput("membershipOutput"),
+                withSpinner(DT::dataTableOutput("membershipOutput"), type = 4),
                 h4("Network Visualization"),
                 div(
                   p("Use the visualization tool below to explore your network as you wish. The communities are illustrated by node colour.")
                 ),
-                visNetworkOutput("networkVis", height = "600px"),
+                withSpinner(visNetworkOutput("networkVis", height = "600px"), type = 4),
                 h4("Hugging Face Explanation"),
                 textOutput("hfExplanation")
-              )
+              ),
+      ),
+        tabItem(tabName = 'network_comparison',
+                fluidPage(
+                h3("Network comaprison Page", align = "center"),
+                p('This tab will be focused on the comparison of two different networks, thus, please Upload a second network to compare to'),
+                fileInput('file2', 'Choose CSV/Excel File', accept = c('.csv', '.xlsx', '.xls')),
+                DT::dataTableOutput("dataTable2"),  # Renders the uploaded data table
+                h4('Correlation in the ties between the networks'),
+                p('In this part of the analysis a QAP methodology will be used to compare the correlation between two selected networks.\nThe QAP methodology is introduced to make sure that each of the observations do no longer have the dependent property which is normally the case when working with network data.\nIn short the QAP uses a simulation of the network to be able to see what would happen to the observations would they have been independent of each other. From these observations, the QAP can generate a probability density function, which can be used to generate the probabilities of a certain observation.\nUsing the table below as an exmaple, the ones represent that there is a tie between a pair of nodes and a 0 representing that there is not, which represents the network next to it.'),
+                fluidRow(
+                  column(width = 6,
+                         tableOutput('QAPtable1')),
+                  column(width = 6, 
+                         plotOutput('QAPNet'))),
+                p('After the network is established like in the example, the vertices get ordered randomly, so in our example it can for instance be 6,3,1,4,2,5. Than we get the following table'),
+                tableOutput('QAPtable2'), 
+                p('Finally we use this randomised network to calculate the correlation with the other non-randomised network. This correlation value is the value for a singular value. After this is repeated for a set number of times, onne could get a good idea of the distributions of the underlying statistics, which could finally be used to determine whether there is any statistical significance or not'),
+                tags$head(tags$style(HTML("#QAPtable2 table {background-color: white; color = black; border: 1px solid black} .table>tbody>tr>td, .table>tbody>tr>th, .table>tfoot>tr>td, .table>tfoot>tr>th, .table>thead>tr>td, .table>thead>tr>th {border: 1px solid black} .my_table_aa01 th {text-align: center !important;}", media="screen", type="text/css"))),
+                tags$head(tags$style(HTML("#QAPtable1 table {background-color: white; color = black; border: 1px solid black} .table>tbody>tr>td, .table>tbody>tr>th, .table>tfoot>tr>td, .table>tfoot>tr>th, .table>thead>tr>td, .table>thead>tr>th {border: 1px solid black} .my_table_aa01 th {text-align: center !important;}", media="screen", type="text/css"))),
+                p('Therefore, the number of repetitions which are done in the simulation is a very important metric, as this determines how many times the network is randomised and thus how good the obtained probability density function represents the actual situation. Therefore, ideally the QAP model would run very often to get the best approximation possible. However, this comes with a trade-off in the time it takes before the model is completed, which is highly dependent on the size and complexity of each network. Thus, the exact optimal value differs for each network. Therefore, it is advised to start with a lower number, like 100, and build up slowly such that the best balance between execution time and accuracy can be found.'),
+                numericInput('QAPreps', 'Number of repetitions:', 100, min = 10, max = 10000),
+                actionButton('QAPAnalysis', 'Run Analysis'), 
+                HTML('<h5><b>Output:</b></h5>'),
+                verbatimTextOutput('QAP'),
+                withSpinner(plotOutput('QAPplot'), type = 4),
+                h4('Statistical differences between the networks'),
+                selectInput('statisticChoice', 'What statistics should be compared in the networks?', 
+                            choices = c('Degree', 'Closeness', 'Betweenness'), multiple = T)),
+                actionButton('StatCompare', 'Run Analysis'),
+                verbatimTextOutput('Stats'),
+                conditionalPanel("input.statisticChoice.includes('Degree')", withSpinner(plotOutput('degree_plot'), type = 4)),
+                conditionalPanel("input.statisticChoice.includes('Closeness')", withSpinner(plotOutput('closeness_plot'), type = 4)),
+                conditionalPanel("input.statisticChoice.includes('Betweenness')", withSpinner(plotOutput('betweenness_plot'), type = 4)),
+                h4('Most important actors in both networks:'),
+                selectInput('ActorMetric', 'What statistic should be used to determine the most important actors?', 
+                            choices = c('Degree','Closeness','Betweenness'), selected = 'betweenness'),
+                numericInput('ActorNum', 'How many actors should be retrieved', 5, min = 1, max = NA),
+                actionButton('ActorComparison', 'Run Analysis'),
+                verbatimTextOutput('ActorCompText'),
+                withSpinner(DT::dataTableOutput('DTActorComp'), type = 4),
+                h4('Most important ties in both networks:'),
+                selectInput('BridgeMetric', 'What statistic should be used to determine the most important ties?', 
+                            choices = c('Absolute', 'Mean'), selected = 'mean'),
+                numericInput('BridgeNum', 'How many ties should be retrieved', 5, min = 1, max = NA),
+                checkboxGroupInput('BridgeVars', 'Extra choices', 
+                                   choices = c('Only local bridges should be considered' = 'Bridges', 'Infinite values should be discarded' = 'drop.infs')),
+                actionButton('BridgeComparison', 'Run Analysis'),
+                verbatimTextOutput('BridgeCompText'),
+                withSpinner(DT::dataTableOutput('DTBridgeComp'), type = 4),
+
+              ),
+
+      tabItem(tabName = "data_export",
+              fluidPage(
+                h3("Data Export", align = "center"),
+                div(
+                  p("Here you can download your network and communities. You can use this feature to save the current state of your network for further analysis or sharing with collaborators."),
+                  downloadButton("downloadNetwork", "Network"),
+                  downloadButton("downloadMemberships", "Communities"),
+                  # Render error message only if there is an error
+                  conditionalPanel(
+                    condition = "output.errorMessage != ''",
+                    verbatimTextOutput("errorMessage", placeholder = TRUE)
+                    )
+                )
+              ),
       )
     )
   )
@@ -181,17 +245,54 @@ ui <- dashboardPage(
 server <- function(input, output, session) {
   # Reactive value to store uploaded dataset
   dataset <- reactiveVal(NULL)
+  dataset2 = reactiveVal(NULL)
+  
+  inet = reactiveVal(NULL)
+  inet2 = reactiveVal(NULL)
+  
+  # Initialize The reactive variables to control when to run analysis
+  shouldAnalyze <- reactiveVal(FALSE)
+  shouldQAPAnalyse = reactiveVal(F)
+  shouldStatisticCompare = reactiveVal(FALSE)
+  shouldActorCompare = reactiveVal(FALSE)
+  shouldBridgeCompare = reactiveVal(FALSE)
+  buttonPressed = reactiveVal(FALSE)
+  shouldContinue = reactiveVal(FALSE)
+  
+
+  degree_plot <- reactiveVal(NULL)
+
+  # Reactive value to store community memberships
+  community_memberships <- reactiveVal(NULL)
+  
+  # Reactive value to store network object
+  network_object <- reactiveVal(NULL)
   
   # Initialize shouldAnalyze to control when to run analysis
   shouldAnalyze <- reactiveVal(FALSE)  
+
   
   # Observe file upload and update `dataset`
   observeEvent(input$file1, {
     inFile <- input$file1
     if (grepl("\\.csv$", inFile$name)) {
-      dataset(read.csv(inFile$datapath))  # Load CSV file
+      dataset(read.csv(inFile$datapath))# Load CSV file
+      inet(graph_from_data_frame(dataset(), directed = FALSE)) # Save as an igraph to save time on the conversion
     } else if (grepl("\\.(xlsx|xls)$", inFile$name)) {
       dataset(read_excel(inFile$datapath))  # Load Excel file
+      inet(graph_from_data_frame(dataset(), directed = FALSE)) # Save as an igraph to save time on the conversion
+    }
+  })
+  
+  # Second data import for the second dataset in the comparison tab
+  observeEvent(input$file2, {
+    inFile <- input$file2
+    if (grepl("\\.csv$", inFile$name)) {
+      dataset2(read.csv(inFile$datapath))  # Load CSV file
+      inet2(graph_from_data_frame(dataset2(), directed = FALSE))
+    } else if (grepl("\\.(xlsx|xls)$", inFile$name)) {
+      dataset2(read_excel(inFile$datapath))  # Load Excel file
+      inet2(graph_from_data_frame(dataset2(), directed = FALSE))
     }
   })
   
@@ -201,10 +302,18 @@ server <- function(input, output, session) {
     shouldAnalyze(FALSE)
   })
   
+  
+  
   # Render uploaded data table
   output$dataTable <- DT::renderDataTable({
     req(dataset())  # Ensure dataset is not NULL
     dataset()  # Return the dataset for rendering
+  })
+  
+  # Render the second dataset to show to the user what was put in
+  output$dataTable2 <- DT::renderDataTable({
+    req(dataset2())  # Ensure dataset is not NULL
+    dataset2()  # Return the dataset for rendering
   })
   
   # Dynamically render the "Previous" button
@@ -216,14 +325,14 @@ server <- function(input, output, session) {
   
   # Dynamically render the "Next" button
   output$nextButtonUI <- renderUI({
-    if (!is.null(input$sidebar) && input$sidebar != "community_detection") {  # Exclude on the last tab
+    if (!is.null(input$sidebar) && input$sidebar != "data_export") {  # Exclude on the last tab
       actionButton("nextTab", "Next", class = "next-button btn btn-primary")
     }
   })
   
   # Define the sequence of tabs
-  tabNames <- c("introduction", "data_upload", "dashboard", "cug_test", "community_detection")
-  
+  tabNames <- c("introduction", "data_upload", "dashboard", "cug_test", "community_detection", "network_comparison", "data_export")
+
   # Function to navigate to the next tab
   observeEvent(input$nextTab, {
     currentTab <- which(tabNames == input$sidebar)
@@ -264,20 +373,6 @@ server <- function(input, output, session) {
   # Render the explanation text obtained from the Hugging Face API
   output$hfExplanationCUG <- renderText({
     explanationOutput()  # Use the existing reactive expression for Hugging Face explanation
-  })
-  
-  # Generate network plot before CUG test
-  output$networkPlot <- renderPlot({
-    req(dataset())
-    n <- intergraph::asNetwork(graph_from_data_frame(dataset(), directed = FALSE))
-    plot(n, edge.width = cugTest()$betweenness * 10, edge.color = "blue")
-  })
-  
-  # Generate betweenness centrality plot after CUG test
-  output$betweennessPlot <- renderPlot({
-    req(input$runCUG)
-    req(dataset())
-    barplot(cugTest()$betweenness, names.arg = 1:length(cugTest()$betweenness), main = "Betweenness Centrality")
   })
   
   # Reactive expression to handle API call for generating explanations
@@ -343,8 +438,19 @@ server <- function(input, output, session) {
   # Check for multi-edges and show modal dialog if conditions are met
   observeEvent(input$runAnalysis, {
     
+    if (is.null(input$file1)) {
+      # if there is no data uploaded,  and show a modal message
+      showModal(
+        modalDialog(title = 'No data uploaded',
+                    'Please upload a network on the Data Upload screen before clicking the button',
+        easyClose = TRUE,
+        footer = modalButton("Got it!"))
+      )
+      # Prevent further execution
+      return()
+    }
     req(dataset())
-    g <- graph_from_data_frame(dataset(), directed = FALSE)
+    g <- inet()
     
     # Simplify the graph to merge multiple edges and check for multi-edges
     g_simplified <- simplify(g)
@@ -366,15 +472,21 @@ server <- function(input, output, session) {
   # Analysis result reactive expression
   analysisResult <- eventReactive(input$runAnalysis, {
     
+    
     req(dataset())
-    g <- graph_from_data_frame(dataset(), directed = FALSE)
+    g <- inet()
     result <- switch(input$algorithm,
                      "Fast Greedy" = cluster_fast_greedy(g),
                      "Louvain" = cluster_louvain(g),
                      "Girvan-Newman" = cluster_edge_betweenness(g),
                      "Walktrap" = cluster_walktrap(g))
+
+    community_memberships(membership(result)) # Store community memberships
+    network_object(g) # Store network object
     list(g = g, result = result, modularity = modularity(result), memberships = membership(result))
   })
+  
+  
   
   # Modularity Output
   output$modularityOutput <- renderPrint({
@@ -392,9 +504,14 @@ server <- function(input, output, session) {
     if (!is.null(analysisResult()$error)) {
       return(data.frame(Error = analysisResult()$error))
     } else {
-      memberships <- analysisResult()$memberships
+      memberships <- community_memberships()
       data.frame(Node = names(memberships), Community = memberships)
     }
+  })
+  
+  # Activate analysis when "Run Analysis" button is clicked
+  observeEvent(input$runAnalysis, {
+    shouldAnalyze(TRUE)
   })
   
   # Community Plot
@@ -678,7 +795,340 @@ server <- function(input, output, session) {
   output$hfExplanation <- renderText({
     explanationOutput()
   })
+  
+
+  # Activate the QAP analysis when "Run Analysis" button is clicked
+  observeEvent(input$QAPAnalysis, {
+    shouldQAPAnalyse(TRUE)
+  })
+  
+  # Get the qap test running
+  QAP_test = eventReactive(input$QAPAnalysis, {
+    req(input$QAPreps)
+    req(shouldQAPAnalyse)
+    req(dataset())
+    req(dataset2())
+    g1 <- inet()
+    g2 <- inet2()
+    result = QAP_networks(g1, g2, reps = input$QAPreps,
+                          net1_name = gsub("\\.\\w+$", "", input$file1$name),
+                          net2_name = gsub("\\.\\w+$", "", input$file2$name))
+    print(paste('Test statistic:', result$testval))
+    result
+  })
+  
+  # Print the QAP test
+  output$QAP = renderPrint({
+    req(QAP_test())
+    QAP_test()
+  })
+  
+  # Plot the output of the QAP test
+  output$QAPplot = renderPlot({
+    req(QAP_test())
+    sna::plot.qaptest(QAP_test())
+  })
+  
+  # If the statistic for the statistical comparison changes, stop the constant analysis
+  observe({
+    input$statisticChoice
+    shouldStatisticCompare(FALSE)
+  })
+  
+  # Start the iteration of the analysis once the button is pressed
+  observeEvent(input$StatCompare, {
+    shouldStatisticCompare(TRUE)
+  })
+  
+  # Load the values for the statistical comparisons once the button is pressed
+  Statistical_comparisons = eventReactive(input$StatCompare, {
+    req(shouldStatisticCompare())
+    req(dataset())
+    req(dataset2())
+    if (is.null(input$statisticChoice)){
+      showModal(
+        modalDialog(title = 'No Choice made',
+                    'Please select at least one statistic to be tested in the choice menu',
+                    easyClose = TRUE,
+                    footer = modalButton("Got it!"))
+      )
+    }
+    statistics = c()
+    if ('Degree' %in% input$statisticChoice){
+      statistics = c(statistics, 'Degree' = T)
+    } else {
+      statistics = c(statistics, 'Degree' = F)
+    }
+    if ('Closeness' %in% input$statisticChoice){
+      statistics = c(statistics, 'Closeness' = T)
+    } else {
+      statistics = c(statistics, 'Closeness' = F)
+    }
+    if ('Betweenness' %in% input$statisticChoice){
+      statistics = c(statistics, 'Betweenness' = T)
+    } else {
+      statistics = c(statistics, 'Betweenness' = F)
+    }
+    g1 <- inet()
+    g2 <- inet2()
+    stats = compare_statistics(g1, g2, statistics = statistics,
+                               net1_name = gsub("\\.\\w+$", "", input$file1$name),
+                               net2_name = gsub("\\.\\w+$", "", input$file2$name))
+  })
+  
+  # Print the output of the statistical comparison
+  output$Stats = renderPrint({
+    req(Statistical_comparisons())
+    Statistical_comparisons()
+  })
+  
+  # Retrieve the plot showing the density of the degrees in both networks
+  degree_plot = eventReactive(input$StatCompare, {
+    req(input$StatCompare)
+    req(shouldStatisticCompare)
+    if ('Degree' %in% input$statisticChoice){
+    g1 <- inet()
+    g2 <- inet2()
+    compare_statistics(g1, g2, statistics = c('Degree' = T),
+                       net1_name = gsub("\\.\\w+$", "", input$file1$name),
+                       net2_name = gsub("\\.\\w+$", "", input$file2$name))$degree_plot
+    } else{
+      NULL
+    }
+  }, ignoreInit = T)
+  
+  # Plot the denisty plot showing the degree in both networks
+  output$degree_plot = renderPlot({
+    req(degree_plot())
+    print(degree_plot())
+  })
+  
+  # Retrieve the plot showing the density of the closeness in both networks
+  closeness_plot = eventReactive(input$StatCompare, {
+    req(input$StatCompare)
+    req(shouldStatisticCompare)
+    if ('Closeness' %in% input$statisticChoice){
+      g1 <- inet()
+      g2 <- inet2()
+      compare_statistics(g1, g2, statistics = c('Closeness' = T),
+                         net1_name = gsub("\\.\\w+$", "", input$file1$name),
+                         net2_name = gsub("\\.\\w+$", "", input$file2$name))$closeness_plot
+    } else{
+      NULL
+    }
+  }, ignoreInit = T)
+  
+  # Plot the denisty plot showing the closeness in both networks
+  output$closeness_plot = renderPlot({
+    req(closeness_plot())
+    print(closeness_plot())
+  })
+  
+  # Retrieve the plot showing the density of the betweenness in both networks
+  betweenness_plot = eventReactive(input$StatCompare, {
+    req(input$StatCompare)
+    req(shouldStatisticCompare)
+    if ('Betweenness' %in% input$statisticChoice){
+      g1 <- inet()
+      g2 <- inet2()
+      compare_statistics(g1, g2, statistics = c('Betweenness' = T),
+                         net1_name = gsub("\\.\\w+$", "", input$file1$name),
+                         net2_name = gsub("\\.\\w+$", "", input$file2$name))$betweenness_plot
+    } else{
+      NULL
+    }
+  }, ignoreInit = T)
+  
+  # Plot the denisty plot showing the betweenness in both networks
+  output$betweenness_plot = renderPlot({
+    req(betweenness_plot())
+    print(betweenness_plot())
+  })
+  
+  # When the metric for the actor comparison changes set the compare to FALSE
+  observe({
+    input$ActorMetric
+    shouldActorCompare(FALSE)
+  })
+  
+  # Execute the actor comparison when the button is pressed
+  observeEvent(input$ActorComparison, {
+    shouldActorCompare(TRUE)
+  })
+  
+  # Get the values for the actor comparison
+  actor_df = eventReactive(input$ActorComparison, {
+    req(dataset())
+    req(dataset2())
+    req(input$ActorMetric)
+    req(shouldActorCompare())
+    req(input$ActorNum)
+    if (input$ActorNum > igraph::vcount(inet())){
+      showModal(modalDialog(
+        title = "Too many nodes selected",
+        paste('Too many nodes were selected,', gsub("\\.\\w+$", "", input$file1$name),'does not contain that many nodes', '\nRequest was', input$ActorNum, 'nodes, whilst a maximum of', igraph::vcount(inet()), 'can be selected'),
+        easyClose = TRUE,
+        footer = modalButton('Got it!')
+      ))
+      return()
+    } else if (input$ActorNum > igraph::vcount(inet2())){
+      showModal(modalDialog(
+        title = "Too many nodes selected",
+        paste('Too many nodes were selected,', gsub("\\.\\w+$", "", input$file2$name),'does not contain that many nodes', '\nRequest was', input$ActorNum, 'nodes, whilst a maximum of', igraph::vcount(inet2()), 'can be selected'),
+        easyClose = TRUE,
+        footer = modalButton('Got it!')
+      ))
+      return()
+    }
+    g1 <- inet()
+    g2 <- inet2()
+    compare_actors(g1, g2, metric = input$ActorMetric,
+                   net1_name = gsub("\\.\\w+$", "", input$file1$name),
+                   net2_name = gsub("\\.\\w+$", "", input$file2$name),
+                   n_actors = input$ActorNum)
+  })
+  
+  # Show the print statements made during the Actor Comparisons
+  output$ActorCompText = renderPrint({
+    req(actor_df())
+    'Result:'
+  })
+  
+  # Show the table which shows the actors and their variables
+  output$DTActorComp = DT::renderDataTable({
+    req(actor_df())
+    actor_df()
+  }
+  )
+  
+  # When the metric for the bridge comparison changes set the compare to FALSE
+  observe({
+    input$BridgeMetric
+    shouldBridgeCompare(FALSE)
+  })
+  
+  # Execute the bridge comparison when the button is pressed
+  observeEvent(input$BridgeComparison, {
+    shouldBridgeCompare(TRUE)
+  })
+  
+  # Get the values for the bridge comparison
+  bridge_df = eventReactive(input$BridgeComparison, {
+    req(dataset())
+    req(dataset2())
+    req(input$BridgeMetric)
+    req(shouldBridgeCompare())
+    req(input$BridgeNum)
+    if (input$BridgeNum > igraph::ecount(inet())){
+      showModal(modalDialog(
+        title = "Too many edges selected",
+        paste('Too many edges were selected,', gsub("\\.\\w+$", "", input$file1$name),'does not contain that many edges', '\nRequest was', input$BridgeNum, 'edges, whilst a maximum of', igraph::ecount(inet()), 'can be selected'),
+        easyClose = TRUE,
+        footer = modalButton('Got it!')
+      ))
+      return()
+    } else if (input$BridgeNum > igraph::ecount(inet2())){
+      showModal(modalDialog(
+        title = "Too many edges selected",
+        paste('Too many edges were selected,', gsub("\\.\\w+$", "", input$file2$name),'does not contain that many edges', '\nRequest was', input$BridgeNum, 'edges, whilst a maximum of', igraph::ecount(inet2()), 'can be selected'),
+        easyClose = TRUE,
+        footer = modalButton('Got it!')
+      ))
+      return()
+    }
+    
+    g1 <- inet()
+    g2 <- inet2()
+    withProgress(bridge_comp(g1, g2, method = input$BridgeMetric,
+                             net1_name = gsub("\\.\\w+$", "", input$file1$name),
+                             net2_name = gsub("\\.\\w+$", "", input$file2$name),
+                             n_actors = input$BridgeNum, 
+                             drop.inf = 'drop.infs' %in% input$BridgeVars,
+                             filter_bridge = 'Bridges' %in% input$BridgeVars),
+                 message = 'Calculating Edge Importancies...')
+  })
+  
+  # Show the print statements made during the Bridge Comparisons
+  output$BridgeCompText = renderPrint({
+    req(bridge_df())
+    'Result:'
+  })
+  
+  # Show the table which shows the bridges and their variables
+  output$DTBridgeComp = DT::renderDataTable({
+    req(bridge_df())
+    bridge_df()
+  }
+  )
+  
+  output$QAPtable1 = renderTable({
+    table = data.frame(A_1 = c(0,1,1,0,0,1), A_2 = c(1,0,0,0,1,0), A_3 = c(1,0,0,1,1,1), A_4 = c(0,0,1,0,0,1), A_5 = c(0,1,1,0,0,1), A_6 = c(1,0,1,1,1,0))
+    rownames(table) = c('A<sub>1</sub>', 'A<sub>2</sub>', 'A<sub>3</sub>', 'A<sub>4</sub>', 'A<sub>5</sub>', 'A<sub>6</sub>')
+    colnames(table) = c('A<sub>1</sub>', 'A<sub>2</sub>', 'A<sub>3</sub>', 'A<sub>4</sub>', 'A<sub>5</sub>', 'A<sub>6</sub>')
+    table
+  }, rownames = T, digits = 0, sanitize.text.function = function(x) x, width = '100%'
+  )
+  
+  output$QAPNet = renderPlot({
+    net = igraph::make_empty_graph() %>% igraph::add_vertices(6) %>% igraph::add.edges(c(1,2, 1,3, 1,6, 2,5, 3,4, 3,5, 3,6, 4,6, 5,6)) %>% igraph::as.undirected()
+    plot(net, main = 'Example Network', 
+         vertex.size = 20,
+         edge.size =4/32,
+         edge.arrow.size = 0.2,
+         vertex.color = 'orange',
+         vertex.label.cex = 1,
+         vertex.label.color = 'black',
+         vertex.frame.color = "black",
+         layout = igraph::layout_with_graphopt)
+  })
+  
+  output$QAPtable2 = renderTable({
+    table = data.frame(A_1 = c(0,1,1,0,0,1), A_2 = c(1,0,0,0,1,0), A_3 = c(1,0,0,1,1,1), A_4 = c(0,0,1,0,0,1), A_5 = c(0,1,1,0,0,1), A_6 = c(1,0,1,1,1,0))
+    rownames(table) = c('A<sub>1</sub>', 'A<sub>2</sub>', 'A<sub>3</sub>', 'A<sub>4</sub>', 'A<sub>5</sub>', 'A<sub>6</sub>')
+    colnames(table) = c('A<sub>1</sub>', 'A<sub>2</sub>', 'A<sub>3</sub>', 'A<sub>4</sub>', 'A<sub>5</sub>', 'A<sub>6</sub>')
+    table[c('A<sub>6</sub>', 'A<sub>3</sub>', 'A<sub>1</sub>', 'A<sub>4</sub>', 'A<sub>2</sub>', 'A<sub>5</sub>'),c('A<sub>6</sub>', 'A<sub>3</sub>', 'A<sub>1</sub>', 'A<sub>4</sub>', 'A<sub>2</sub>', 'A<sub>5</sub>')]
+  }, rownames = T, digits = 0, sanitize.text.function = function(x) x, width = '50%'
+  )
+
+  # Function to export network data
+  output$downloadNetwork <- downloadHandler(
+    filename = function() {
+      paste("network", ".graphml", sep = "")
+    },
+    content = function(file) {
+      if (!is.null(network_object())) {
+        write_graph(network_object(), file, format = "graphml")
+      }
+    }
+  )
+  
+  # Function to export community memberships
+  output$downloadMemberships <- downloadHandler(
+    filename = function() {
+      paste("community_memberships", ".csv", sep = "")
+    },
+    content = function(file) {
+      if (!is.null(community_memberships())){
+        write.csv(data.frame(Node = names(community_memberships()), Community = community_memberships()), file, row.names = FALSE)
+      }
+    }
+  )
+
+  output$errorMessage <- renderText({
+    if (is.null(network_object()) && is.null(community_memberships())) {
+      return("Error: No network and communities available. Please return to the 'Community Detection' tab.")
+    } else if (is.null(network_object())) {
+      return("Error: No network available. Please return to the 'Community Detection' tab.")
+    } else if (is.null(community_memberships())) {
+      return("Error: No communities available. Please return to the 'Community Detection' tab.")
+    } else {
+      return(NULL)
+    }
+  })
+
 }
+
+
 
 # Run the Shiny application
 shinyApp(ui = ui, server = server)
