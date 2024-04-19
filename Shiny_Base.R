@@ -12,7 +12,8 @@ library(igraph)      # For network analysis (not explicitly used in provided sni
 library(visNetwork)
 library(ggplot2)
 library(english)
-source(paste0(dirname(rstudioapi::getSourceEditorContext()$path), '/Comparison_script.R'))
+#source(paste0(dirname(rstudioapi::getSourceEditorContext()$path), '/Comparison_script.R'))
+source('Comparison_script.R')
 
 # Setting the Hugging Face API key (ensure this is securely managed in production)
 Sys.setenv(HUGGINGFACE_API_KEY = "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")
