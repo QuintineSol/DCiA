@@ -10,8 +10,10 @@ library(httr)        # For HTTP requests
 library(jsonlite)    # For JSON processing
 library(igraph)      # For network analysis (not explicitly used in provided snippet but may be needed)
 library(visNetwork)
+library(ggplot2)
 library(english)
-source(paste0(dirname(rstudioapi::getSourceEditorContext()$path), '/Comparison_script.R'))
+#source(paste0(dirname(rstudioapi::getSourceEditorContext()$path), '/Comparison_script.R'))
+source('Comparison_script.R')
 
 # Setting the Hugging Face API key (ensure this is securely managed in production)
 Sys.setenv(HUGGINGFACE_API_KEY = "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")
@@ -23,7 +25,8 @@ ui <- dashboardPage(
     sidebarMenu(id = "sidebar",
                 menuItem("Introduction", tabName = "introduction"),
                 menuItem("Data Upload", tabName = "data_upload"),
-                menuItem("CUG Test", tabName = "cug_test"),
+                menuItem("Network Dashboard", tabName = "dashboard"),
+                menuItem("Connection Importance", tabName = "cug_test"),
                 menuItem("Community Detection", tabName = "community_detection"),
                 menuItem("Network Comparison", tabName = 'network_comparison'),
                 menuItem("Data Export", tabName = "data_export")
@@ -59,19 +62,73 @@ ui <- dashboardPage(
                 )
               )
       ),
+      tabItem(tabName = "dashboard",
+              fluidPage(
+                column(width = 12, 
+                       h1("Network Dashboard", align = "center"),
+                       p("Now that a network has been imported, it is time to get a better understanding of its characteristics. The current page allows for a quick and comprehensive overview of your network through a variety of statistics, findings, and visualizations. The dashboard is designed to empower the laymen that have access to network data. Getting a better understanding of the network starts with a visual inspection of its structure. Therefore, the network is displayed in the interactive visualization below."),
+                       visNetworkOutput("networkPlot1", height = "350px"),
+                       p("Although visualizing the network serves as a useful method to obtain a holistic view of the network's structure and connections, it only scratches the surface of what can be discovered. Through further exploration with statistical measures and thus representing network characteristics as numbers, we can extract meaningful patterns, trends, and relationships that may not be immediately apparent from the visualization alone. These insights can help us better understand the underlying dynamics of the network, identify key nodes or clusters, detect anomalies or trends over time, and make informed decisions to optimize network performance or address specific challenges."),
+                       fluidRow(
+                         # More explanation on what the plot represent HERE
+                         column(width = 3, 
+                                plotOutput("CountPlot", width = "100%", height = "300px")
+                         ),
+                         column(width = 3, 
+                                plotOutput("ScorePlot", width = "100%", height = "300px")
+                         ),
+                         column(width = 3, 
+                                plotOutput("DistancePlot", width = "100%", height = "300px")
+                         ),
+                         column(width = 3,
+                                plotOutput("CentralizationPlot", width = "100%", height = "300px"))
+                       ),
+                       h3("Exploring Vertex Level Indices"),
+                       p("The following section delves into visualizations of vertex-level indices, otherwise known as centrality measures, providing valuable insights into the overall structure and characteristics of the network. They concerns statistical numbers about the actor present in the network. There is a bit more flexibility here. This means that can choose the centrality measure of interest, allowing you to gain a deeper understanding of its relevance in the provided network."),
+                       
+                       h4("Histogram Analysis"),
+                       p("Histograms offer a comprehensive view of the distribution of vertex-level indices or centralities across the entire network. By visualizing the frequency of values within predefined bins, histograms enable you to identify the range, skewness, and outliers of the distribution."),
+                       
+                       h4("Boxplot Analysis"),
+                       p("Boxplots provide a concise summary of the distribution and variability of vertex-level indices, emphasizing key statistical measures such as the median, quartiles, and outliers."),
+                       fluidRow(
+                         column(width = 12,
+                                selectInput("centrality", "Choose the centrality measure of interest:",
+                                            choices = c("Degree", "Betweenness", "Closeness", "Eccentricity"),
+                                            selected = "Degree"),
+                                align = "center"),
+                         column(width = 6, 
+                                plotOutput("DistPlot", width = "100%", height = "350px")
+                         ),
+                         column(width = 6, 
+                                plotOutput("BoxPlot", width = "100%", height = "350px")
+                         ),
+                         
+                       )
+                )
+                
+              )
+      ),
       tabItem(tabName = "cug_test",
               fluidPage(
                 column(
                   width = 12,
-                  h3("CUG Test", align = "center"),
-                  p("This page allows you to conduct a CUG (Conditional Uniform Graph) test on your network data. In particular, we will focus on evaluating the betweenness centralization of edges in your network. This helps to assess how much influence certain edges have in connecting different parts of the network."),
-                  p("The Conditional Uniform Graph (CUG) test is a statistical method used to measure the degree of centralization of edges in a network. Centralization refers to the extent to which a network's connectivity is concentrated around a few edges or nodes. In the context of the CUG test, we specifically examine betweenness centrality, which quantifies the importance of individual edges in facilitating communication between other nodes in the network."),
-                  p("By conducting the CUG test, you can gain insights into the structural properties of your network and identify key edges that play a significant role in connecting different components. This information is valuable for understanding the flow of information, identifying potential bottlenecks, and optimizing network efficiency."),
+                  h3("Connection Importance", align = "center"),
+                  p("This page allows you to see how important certain connections are in your provided network data. It helps us identify the most important 'bridges' in our network, the ones that connect different parts of the network together."),
+                  p("Imagine you have a big group of researchers and stakeholders from different fields. By using the Conditional Uniform Graph (CUG) test, you can figure out where there might be gaps in communication or places where people aren't working together as well as they could be. This helps to create better networks between researchers and stakeholders, which leads to more innovative ideas and better understanding of how generative AI can impact different industries."),
                   actionButton("runCUG", "Run CUG Test"),
                   h4("CUG Test Results"),
                   verbatimTextOutput("cugTestOutput"),
                   h4("Hugging Face Explanation"),
-                  textOutput("hfExplanationCUG")
+                  p("Univariate Conditional Uniform Graph Test: This means we're looking at how important individual connections are in the network."),
+                  p("Conditioning Method: This tells us what part of the network we're focusing on. In this case, we're looking specifically at the connections between different nodes (researchers) in the network."),
+                  p("Diagonal Used: This tells us if we're including cases where researchers are connected to themselves."),
+                  p("Replications: This just says how many times we repeated the test to make sure our results are reliable."),
+                  p("Observed Value: This is what we actually found when we looked at the network. It tells us how important the connections are."),
+                  p("Pr(X>=Obs): This tells us how likely it is that the results we found are just random chance, meaning that the."),
+                  p("Pr(X<=Obs): This tells us how likely it is a result we got unusual compared to what we might expect by chance. This would therefore meaning that the Observed Value is statistically significant. This suggests that there is a real and meaningful pattern in the network data."),
+                  p(""),
+                  ("hfExplanationCUG")
                 )
               )
       ),
@@ -122,8 +179,8 @@ ui <- dashboardPage(
                 textOutput("hfExplanation")
               ),
       ),
-        tabItem(tabName = 'network_comparison',
-                fluidPage(
+      tabItem(tabName = 'network_comparison',
+              fluidPage(
                 h3("Network comaprison Page", align = "center"),
                 p('This tab will be focused on the comparison of two different networks, thus, please Upload a second network to compare to'),
                 fileInput('file2', 'Choose CSV/Excel File', accept = c('.csv', '.xlsx', '.xls')),
@@ -149,30 +206,30 @@ ui <- dashboardPage(
                 h4('Statistical differences between the networks'),
                 selectInput('statisticChoice', 'What statistics should be compared in the networks?', 
                             choices = c('Degree', 'Closeness', 'Betweenness'), multiple = T)),
-                actionButton('StatCompare', 'Run Analysis'),
-                verbatimTextOutput('Stats'),
-                conditionalPanel("input.statisticChoice.includes('Degree')", withSpinner(plotOutput('degree_plot'), type = 4)),
-                conditionalPanel("input.statisticChoice.includes('Closeness')", withSpinner(plotOutput('closeness_plot'), type = 4)),
-                conditionalPanel("input.statisticChoice.includes('Betweenness')", withSpinner(plotOutput('betweenness_plot'), type = 4)),
-                h4('Most important actors in both networks:'),
-                selectInput('ActorMetric', 'What statistic should be used to determine the most important actors?', 
-                            choices = c('Degree','Closeness','Betweenness'), selected = 'betweenness'),
-                numericInput('ActorNum', 'How many actors should be retrieved', 5, min = 1, max = NA),
-                actionButton('ActorComparison', 'Run Analysis'),
-                verbatimTextOutput('ActorCompText'),
-                withSpinner(DT::dataTableOutput('DTActorComp'), type = 4),
-                h4('Most important ties in both networks:'),
-                selectInput('BridgeMetric', 'What statistic should be used to determine the most important ties?', 
-                            choices = c('Absolute', 'Mean'), selected = 'mean'),
-                numericInput('BridgeNum', 'How many ties should be retrieved', 5, min = 1, max = NA),
-                checkboxGroupInput('BridgeVars', 'Extra choices', 
-                                   choices = c('Only local bridges should be considered' = 'Bridges', 'Infinite values should be discarded' = 'drop.infs')),
-                actionButton('BridgeComparison', 'Run Analysis'),
-                verbatimTextOutput('BridgeCompText'),
-                withSpinner(DT::dataTableOutput('DTBridgeComp'), type = 4),
-
-              ),
-
+              actionButton('StatCompare', 'Run Analysis'),
+              verbatimTextOutput('Stats'),
+              conditionalPanel("input.statisticChoice.includes('Degree')", withSpinner(plotOutput('degree_plot'), type = 4)),
+              conditionalPanel("input.statisticChoice.includes('Closeness')", withSpinner(plotOutput('closeness_plot'), type = 4)),
+              conditionalPanel("input.statisticChoice.includes('Betweenness')", withSpinner(plotOutput('betweenness_plot'), type = 4)),
+              h4('Most important actors in both networks:'),
+              selectInput('ActorMetric', 'What statistic should be used to determine the most important actors?', 
+                          choices = c('Degree','Closeness','Betweenness'), selected = 'betweenness'),
+              numericInput('ActorNum', 'How many actors should be retrieved', 5, min = 1, max = NA),
+              actionButton('ActorComparison', 'Run Analysis'),
+              verbatimTextOutput('ActorCompText'),
+              withSpinner(DT::dataTableOutput('DTActorComp'), type = 4),
+              h4('Most important ties in both networks:'),
+              selectInput('BridgeMetric', 'What statistic should be used to determine the most important ties?', 
+                          choices = c('Absolute', 'Mean'), selected = 'mean'),
+              numericInput('BridgeNum', 'How many ties should be retrieved', 5, min = 1, max = NA),
+              checkboxGroupInput('BridgeVars', 'Extra choices', 
+                                 choices = c('Only local bridges should be considered' = 'Bridges', 'Infinite values should be discarded' = 'drop.infs')),
+              actionButton('BridgeComparison', 'Run Analysis'),
+              verbatimTextOutput('BridgeCompText'),
+              withSpinner(DT::dataTableOutput('DTBridgeComp'), type = 4),
+              
+      ),
+      
       tabItem(tabName = "data_export",
               fluidPage(
                 h3("Data Export", align = "center"),
@@ -184,7 +241,7 @@ ui <- dashboardPage(
                   conditionalPanel(
                     condition = "output.errorMessage != ''",
                     verbatimTextOutput("errorMessage", placeholder = TRUE)
-                    )
+                  )
                 )
               ),
       )
@@ -210,9 +267,9 @@ server <- function(input, output, session) {
   buttonPressed = reactiveVal(FALSE)
   shouldContinue = reactiveVal(FALSE)
   
-
+  
   degree_plot <- reactiveVal(NULL)
-
+  
   # Reactive value to store community memberships
   community_memberships <- reactiveVal(NULL)
   
@@ -221,7 +278,7 @@ server <- function(input, output, session) {
   
   # Initialize shouldAnalyze to control when to run analysis
   shouldAnalyze <- reactiveVal(FALSE)  
-
+  
   
   # Observe file upload and update `dataset`
   observeEvent(input$file1, {
@@ -282,9 +339,7 @@ server <- function(input, output, session) {
   })
   
   # Define the sequence of tabs
-  tabNames <- c("introduction", "data_upload", "cug_test", "community_detection", "network_comparison", "data_export")
-
-
+  tabNames <- c("introduction", "data_upload", "dashboard", "cug_test", "community_detection", "network_comparison", "data_export")
   
   # Function to navigate to the next tab
   observeEvent(input$nextTab, {
@@ -396,8 +451,8 @@ server <- function(input, output, session) {
       showModal(
         modalDialog(title = 'No data uploaded',
                     'Please upload a network on the Data Upload screen before clicking the button',
-        easyClose = TRUE,
-        footer = modalButton("Got it!"))
+                    easyClose = TRUE,
+                    footer = modalButton("Got it!"))
       )
       # Prevent further execution
       return()
@@ -433,7 +488,7 @@ server <- function(input, output, session) {
                      "Louvain" = cluster_louvain(g),
                      "Girvan-Newman" = cluster_edge_betweenness(g),
                      "Walktrap" = cluster_walktrap(g))
-
+    
     community_memberships(membership(result)) # Store community memberships
     network_object(g) # Store network object
     list(g = g, result = result, modularity = modularity(result), memberships = membership(result))
@@ -500,6 +555,227 @@ server <- function(input, output, session) {
     }
   })
   
+  # Dashboard Network Plot
+  output$networkPlot1 <- renderVisNetwork({
+    req(dataset())
+    g <- graph_from_data_frame(dataset(), directed = FALSE)
+    
+    # Set the color of the node
+    V(g)$color <- "#1bbbff"
+    
+    visNetwork::visIgraph(g) %>%
+      visIgraphLayout(layout = "layout_with_fr") %>%
+      visNodes(color = list(background = V(g)$color, border = "#2b2b2b", highlight = "#1F51FF"), 
+               shadow = list(enabled = TRUE, size = 10, x = 0, y = 0)) %>%
+      visEdges(
+        # arrows = 'to',
+        color = list(color = "#cccccc", highlight = "#FF69B4"),
+        shadow = list(enabled = FALSE)
+      ) %>%
+      visOptions(highlightNearest = list(enabled = TRUE, degree = 1, hover = TRUE), 
+                 nodesIdSelection = list(enabled = TRUE, style = "width: 150px;")) %>%
+      visLayout(randomSeed = 123) %>%
+      visInteraction(navigationButtons = TRUE) %>%
+      visEdges(smooth = FALSE) 
+  }
+  )
+  
+  # Graph Indices Count Plot
+  output$CountPlot <- renderPlot({
+    req(dataset())
+    g <- graph_from_data_frame(dataset(), directed = FALSE)
+    vertex_count <- igraph::vcount(g)
+    edge_count <- igraph::ecount(g)
+    
+    scores <- cbind(edge_count, vertex_count)
+    distances <- cbind(edge_count, vertex_count)
+    
+    plot_df <- data.frame(
+      Category = c("Edge", "Vertex"),
+      Counts = c(edge_count, vertex_count)
+    )
+    
+    ggplot(plot_df, aes(x = Counts, y = Category, fill = Category)) +
+      geom_bar(stat = "identity") +
+      scale_fill_manual(values = c("Edge" = "#1bbbff", "Vertex" = "#FF69B4"), name = "Category") +
+      labs(x = "Counts", y = "Category", title = "Horizontal Bar Chart - Counts") +
+      theme_minimal() +
+      theme(
+        legend.position = "top",
+        plot.title = element_text(hjust = 0.5), # Center the plot title
+        plot.margin = margin(10, 30, 10, 10) # Adjust plot margins
+      )
+    
+  })
+  
+  # Graph Indices Score Plot
+  output$ScorePlot <- renderPlot({
+    req(dataset())
+    g <- graph_from_data_frame(dataset(), directed = FALSE)
+    density <- igraph::edge_density(g)
+    transitivity <- igraph::transitivity(g)
+    
+    plot_df <- data.frame(
+      Category = c("Density", "Transitivity"),
+      Scores = c(density, transitivity)
+    )
+    
+    ggplot(plot_df, aes(x = Scores, y = Category, fill = Category)) +
+      geom_bar(stat = "identity") +
+      scale_fill_manual(values = c("Density" = "#1bbbff", "Transitivity" = "#FF69B4"), name = "Category") +
+      labs(x = "Score", y = "Category", title = "Horizontal Bar Chart - Scores") +
+      theme_minimal() +
+      theme(
+        legend.position = "top",
+        plot.title = element_text(hjust = 0.5), # Center the plot title
+        plot.margin = margin(10, 30, 10, 10) # Adjust plot margins
+      ) +
+      coord_cartesian(xlim = c(0, 1)) + # Adjust x-axis limits
+      coord_flip() # Flip the coordinates to make the bars vertical
+  })
+  
+  # Graph Indices Distance Plot
+  
+  output$DistancePlot <- renderPlot({
+    req(dataset())
+    g <- graph_from_data_frame(dataset(), directed = FALSE)
+    
+    mean_dist <- igraph::mean_distance(g)
+    radius <- igraph::radius(g)
+    diameter <- igraph::diameter(g)
+    
+    plot_df <- data.frame(
+      Category = c("Mean Distance", "Radius", "Diameter"),
+      Distances = c(mean_dist, radius, diameter)
+    )
+    
+    ggplot(plot_df, aes(x = Distances, y = Category, fill = Category)) +
+      geom_bar(stat = "identity") +
+      scale_fill_manual(values = c("Mean Distance" = "#1bbbff", "Radius" = "#FF69B4", "Diameter" = "#A9A9A9"), name = "Category") +
+      labs(x = "Distance", y = "Category", title = "Horizontal Bar Chart - Distances") +
+      theme_minimal() +
+      theme(
+        legend.position = "top",
+        plot.title = element_text(hjust = 0.5), # Center the plot title
+        plot.margin = margin(10, 30, 10, 10) # Adjust plot margins
+      ) +
+      coord_cartesian(xlim = c(0, max(plot_df$Distances))) # Adjust x-axis limits
+  })
+  
+  
+  # Graph Indices Centralization Plot
+  
+  output$CentralizationPlot <- renderPlot({
+    req(dataset())
+    g <- graph_from_data_frame(dataset(), directed = FALSE)
+    
+    betweenness_centralization <- igraph::centr_betw(g, directed = FALSE)$centralization
+    closeness_centralization <- igraph::centr_clo(g, mode = 'out')$centralization
+    degree_centralization <- igraph::centr_degree(g, mode = 'all')$centralization
+    eigen_centralization <- igraph::centr_eigen(g, directed = FALSE)$centralization
+    
+    plot_df <- data.frame(
+      Category = c("Betweenness", "Closeness", "Degree", "Eigenvector"),
+      Centralization = c(betweenness_centralization,
+                         closeness_centralization,
+                         degree_centralization, 
+                         eigen_centralization)
+    )
+    
+    ggplot(plot_df, aes(x = Centralization, y = Category, fill = Category)) +
+      geom_bar(stat = "identity") +
+      scale_fill_manual(values = c("Betweenness" = "#1bbbff",
+                                   "Closeness" = "#FF69B4",
+                                   "Degree" = "#A9A9A9",
+                                   "Eigenvector" = "#1F51FF"
+      ), 
+      name = "Category") +
+      labs(x = "Centralization", y = "Category", title = "Horizontal Bar Chart - Centralization") +
+      theme_minimal() +
+      theme(
+        legend.position = "top",
+        plot.title = element_text(hjust = 0.5), # Center the plot title
+        plot.margin = margin(10, 30, 10, 10) # Adjust plot margins
+      ) +
+      coord_cartesian(xlim = c(0, max(plot_df$Centralization))) + # Adjust x-axis limits
+      coord_flip() # Flip the coordinates to make the bars vertical
+  })
+  
+  # Distribution Plot
+  output$DistPlot <- renderPlot({
+    req(dataset())
+    g <- graph_from_data_frame(dataset(), directed = FALSE)
+    
+    if (input$centrality == "Degree"){
+      result = igraph::degree(g, mode = "all")
+      binwidth = 0.25
+    }
+    
+    if (input$centrality == "Betweenness"){
+      result = igraph::betweenness(g, directed = FALSE, normalized = TRUE)
+      binwidth = 0.01
+    }
+    
+    if (input$centrality == "Closeness"){
+      result = igraph::closeness(g, mode = "all")
+      binwidth = 0.1
+    }
+    
+    if (input$centrality == "Eccentricity"){
+      result = igraph::eccentricity(g, mode = 'all')
+      binwidth = 0.1
+    }
+    
+    # Create a data frame containing the centrality measures
+    centrality_df <- data.frame(Centrality = result)
+    
+    # Create a histogram using ggplot2
+    ggplot(centrality_df, aes(x = Centrality)) +
+      geom_histogram(binwidth = binwidth, fill = "#1bbbff", alpha = 1) +
+      labs(x = input$centrality, y = "Frequency", title = "Centrality Distribution Histogram") +
+      theme_minimal() +
+      theme(
+        legend.position = "top",
+        plot.title = element_text(hjust = 0.5), # Center the plot title
+      )
+  })
+  
+  # Centrality Boxplots
+  
+  output$BoxPlot <- renderPlot({
+    req(dataset())
+    g <- graph_from_data_frame(dataset(), directed = FALSE)
+    
+    if (input$centrality == "Degree"){
+      result = igraph::degree(g, mode = "all")
+    }
+    
+    if (input$centrality == "Betweenness"){
+      result = igraph::betweenness(g, directed = FALSE, normalized = TRUE)
+    }
+    
+    if (input$centrality == "Closeness"){
+      result = igraph::closeness(g, mode = "all")
+    }
+    
+    if (input$centrality == "Eccentricity"){
+      result = igraph::eccentricity(g, mode = 'all')
+    }
+    
+    # Create a data frame containing the centrality measures
+    centrality_df <- data.frame(Centrality = result)
+    
+    # Create a histogram using ggplot2
+    ggplot(centrality_df, aes(x = Centrality)) +
+      geom_boxplot(fill = "#1bbbff", alpha = 1) +
+      labs(x = input$centrality, y = "Frequency", title = "Centrality Boxplots") +
+      theme_minimal() +
+      theme(
+        legend.position = "top",
+        plot.title = element_text(hjust = 0.5), # Center the plot title
+      )
+  })
+  
   explanationOutput <- eventReactive(input$runAnalysis, {
     req(analysisResult())
     modularity_val <- analysisResult()$modularity
@@ -528,7 +804,7 @@ server <- function(input, output, session) {
     explanationOutput()
   })
   
-
+  
   # Activate the QAP analysis when "Run Analysis" button is clicked
   observeEvent(input$QAPAnalysis, {
     shouldQAPAnalyse(TRUE)
@@ -619,11 +895,11 @@ server <- function(input, output, session) {
     req(input$StatCompare)
     req(shouldStatisticCompare)
     if ('Degree' %in% input$statisticChoice){
-    g1 <- inet()
-    g2 <- inet2()
-    compare_statistics(g1, g2, statistics = c('Degree' = T),
-                       net1_name = gsub("\\.\\w+$", "", input$file1$name),
-                       net2_name = gsub("\\.\\w+$", "", input$file2$name))$degree_plot
+      g1 <- inet()
+      g2 <- inet2()
+      compare_statistics(g1, g2, statistics = c('Degree' = T),
+                         net1_name = gsub("\\.\\w+$", "", input$file1$name),
+                         net2_name = gsub("\\.\\w+$", "", input$file2$name))$degree_plot
     } else{
       NULL
     }
@@ -821,7 +1097,7 @@ server <- function(input, output, session) {
     table[c('A<sub>6</sub>', 'A<sub>3</sub>', 'A<sub>1</sub>', 'A<sub>4</sub>', 'A<sub>2</sub>', 'A<sub>5</sub>'),c('A<sub>6</sub>', 'A<sub>3</sub>', 'A<sub>1</sub>', 'A<sub>4</sub>', 'A<sub>2</sub>', 'A<sub>5</sub>')]
   }, rownames = T, digits = 0, sanitize.text.function = function(x) x, width = '50%'
   )
-
+  
   # Function to export network data
   output$downloadNetwork <- downloadHandler(
     filename = function() {
@@ -845,7 +1121,7 @@ server <- function(input, output, session) {
       }
     }
   )
-
+  
   output$errorMessage <- renderText({
     if (is.null(network_object()) && is.null(community_memberships())) {
       return("Error: No network and communities available. Please return to the 'Community Detection' tab.")
@@ -857,7 +1133,7 @@ server <- function(input, output, session) {
       return(NULL)
     }
   })
-
+  
 }
 
 
