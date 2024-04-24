@@ -26,7 +26,7 @@ ui <- dashboardPage(
                 menuItem("Introduction", tabName = "introduction"),
                 menuItem("Data Upload", tabName = "data_upload"),
                 menuItem("Network Dashboard", tabName = "dashboard"),
-                menuItem("CUG Test", tabName = "cug_test"),
+                menuItem("Connection Importance", tabName = "cug_test"),
                 menuItem("Community Detection", tabName = "community_detection"),
                 menuItem("Network Comparison", tabName = 'network_comparison'),
                 menuItem("Data Export", tabName = "data_export")
@@ -63,7 +63,7 @@ ui <- dashboardPage(
               )
       ),
       tabItem(tabName = "dashboard",
-               fluidPage(
+              fluidPage(
                    column(width = 12, 
                           h1("Network Dashboard", align = "center"),
                           p("Now that a network has been imported, it is time to get a better understanding of its characteristics. The current page allows for a quick and comprehensive overview of your network through a variety of statistics, findings, and visualizations. The dashboard is designed to empower the laymen that have access to network data. Getting a better understanding of the network starts with a visual inspection of its structure. Therefore, the network is displayed in the interactive visualization below."),
@@ -113,15 +113,22 @@ ui <- dashboardPage(
               fluidPage(
                 column(
                   width = 12,
-                  h3("CUG Test", align = "center"),
-                  p("This page allows you to conduct a CUG (Conditional Uniform Graph) test on your network data. In particular, we will focus on evaluating the betweenness centralization of edges in your network. This helps to assess how much influence certain edges have in connecting different parts of the network."),
-                  p("The Conditional Uniform Graph (CUG) test is a statistical method used to measure the degree of centralization of edges in a network. Centralization refers to the extent to which a network's connectivity is concentrated around a few edges or nodes. In the context of the CUG test, we specifically examine betweenness centrality, which quantifies the importance of individual edges in facilitating communication between other nodes in the network."),
-                  p("By conducting the CUG test, you can gain insights into the structural properties of your network and identify key edges that play a significant role in connecting different components. This information is valuable for understanding the flow of information, identifying potential bottlenecks, and optimizing network efficiency."),
+                  h3("Connection Importance", align = "center"),
+                  p("This page allows you to see how important certain connections are in your provided network data. It helps us identify the most important 'bridges' in our network, the ones that connect different parts of the network together."),
+                  p("Imagine you have a big group of researchers and stakeholders from different fields. By using the Conditional Uniform Graph (CUG) test, you can figure out where there might be gaps in communication or places where people aren't working together as well as they could be. This helps to create better networks between researchers and stakeholders, which leads to more innovative ideas and better understanding of how generative AI can impact different industries."),
                   actionButton("runCUG", "Run CUG Test"),
                   h4("CUG Test Results"),
                   verbatimTextOutput("cugTestOutput"),
                   h4("Hugging Face Explanation"),
-                  textOutput("hfExplanationCUG")
+                  p("Univariate Conditional Uniform Graph Test: This means we're looking at how important individual connections are in the network."),
+                  p("Conditioning Method: This tells us what part of the network we're focusing on. In this case, we're looking specifically at the connections between different nodes (researchers) in the network."),
+                  p("Diagonal Used: This tells us if we're including cases where researchers are connected to themselves."),
+                  p("Replications: This just says how many times we repeated the test to make sure our results are reliable."),
+                  p("Observed Value: This is what we actually found when we looked at the network. It tells us how important the connections are."),
+                  p("Pr(X>=Obs): This tells us how likely it is that the results we found are just random chance, meaning that the."),
+                  p("Pr(X<=Obs): This tells us how likely it is a result we got unusual compared to what we might expect by chance. This would therefore meaning that the Observed Value is statistically significant. This suggests that there is a real and meaningful pattern in the network data."),
+                  p(""),
+                  ("hfExplanationCUG")
                 )
               )
       ),
@@ -172,8 +179,8 @@ ui <- dashboardPage(
                 textOutput("hfExplanation")
               ),
       ),
-        tabItem(tabName = 'network_comparison',
-                fluidPage(
+      tabItem(tabName = 'network_comparison',
+              fluidPage(
                 h3("Network comaprison Page", align = "center"),
                 p('This tab will be focused on the comparison of two different networks, thus, please Upload a second network to compare to'),
                 fileInput('file2', 'Choose CSV/Excel File', accept = c('.csv', '.xlsx', '.xls')),
@@ -199,30 +206,30 @@ ui <- dashboardPage(
                 h4('Statistical differences between the networks'),
                 selectInput('statisticChoice', 'What statistics should be compared in the networks?', 
                             choices = c('Degree', 'Closeness', 'Betweenness'), multiple = T)),
-                actionButton('StatCompare', 'Run Analysis'),
-                verbatimTextOutput('Stats'),
-                conditionalPanel("input.statisticChoice.includes('Degree')", withSpinner(plotOutput('degree_plot'), type = 4)),
-                conditionalPanel("input.statisticChoice.includes('Closeness')", withSpinner(plotOutput('closeness_plot'), type = 4)),
-                conditionalPanel("input.statisticChoice.includes('Betweenness')", withSpinner(plotOutput('betweenness_plot'), type = 4)),
-                h4('Most important actors in both networks:'),
-                selectInput('ActorMetric', 'What statistic should be used to determine the most important actors?', 
-                            choices = c('Degree','Closeness','Betweenness'), selected = 'betweenness'),
-                numericInput('ActorNum', 'How many actors should be retrieved', 5, min = 1, max = NA),
-                actionButton('ActorComparison', 'Run Analysis'),
-                verbatimTextOutput('ActorCompText'),
-                withSpinner(DT::dataTableOutput('DTActorComp'), type = 4),
-                h4('Most important ties in both networks:'),
-                selectInput('BridgeMetric', 'What statistic should be used to determine the most important ties?', 
-                            choices = c('Absolute', 'Mean'), selected = 'mean'),
-                numericInput('BridgeNum', 'How many ties should be retrieved', 5, min = 1, max = NA),
-                checkboxGroupInput('BridgeVars', 'Extra choices', 
-                                   choices = c('Only local bridges should be considered' = 'Bridges', 'Infinite values should be discarded' = 'drop.infs')),
-                actionButton('BridgeComparison', 'Run Analysis'),
-                verbatimTextOutput('BridgeCompText'),
-                withSpinner(DT::dataTableOutput('DTBridgeComp'), type = 4),
-
-              ),
-
+              actionButton('StatCompare', 'Run Analysis'),
+              verbatimTextOutput('Stats'),
+              conditionalPanel("input.statisticChoice.includes('Degree')", withSpinner(plotOutput('degree_plot'), type = 4)),
+              conditionalPanel("input.statisticChoice.includes('Closeness')", withSpinner(plotOutput('closeness_plot'), type = 4)),
+              conditionalPanel("input.statisticChoice.includes('Betweenness')", withSpinner(plotOutput('betweenness_plot'), type = 4)),
+              h4('Most important actors in both networks:'),
+              selectInput('ActorMetric', 'What statistic should be used to determine the most important actors?', 
+                          choices = c('Degree','Closeness','Betweenness'), selected = 'betweenness'),
+              numericInput('ActorNum', 'How many actors should be retrieved', 5, min = 1, max = NA),
+              actionButton('ActorComparison', 'Run Analysis'),
+              verbatimTextOutput('ActorCompText'),
+              withSpinner(DT::dataTableOutput('DTActorComp'), type = 4),
+              h4('Most important ties in both networks:'),
+              selectInput('BridgeMetric', 'What statistic should be used to determine the most important ties?', 
+                          choices = c('Absolute', 'Mean'), selected = 'mean'),
+              numericInput('BridgeNum', 'How many ties should be retrieved', 5, min = 1, max = NA),
+              checkboxGroupInput('BridgeVars', 'Extra choices', 
+                                 choices = c('Only local bridges should be considered' = 'Bridges', 'Infinite values should be discarded' = 'drop.infs')),
+              actionButton('BridgeComparison', 'Run Analysis'),
+              verbatimTextOutput('BridgeCompText'),
+              withSpinner(DT::dataTableOutput('DTBridgeComp'), type = 4),
+              
+      ),
+      
       tabItem(tabName = "data_export",
               fluidPage(
                 h3("Data Export", align = "center"),
@@ -234,7 +241,7 @@ ui <- dashboardPage(
                   conditionalPanel(
                     condition = "output.errorMessage != ''",
                     verbatimTextOutput("errorMessage", placeholder = TRUE)
-                    )
+                  )
                 )
               ),
       )
@@ -260,9 +267,9 @@ server <- function(input, output, session) {
   buttonPressed = reactiveVal(FALSE)
   shouldContinue = reactiveVal(FALSE)
   
-
+  
   degree_plot <- reactiveVal(NULL)
-
+  
   # Reactive value to store community memberships
   community_memberships <- reactiveVal(NULL)
   
@@ -271,7 +278,7 @@ server <- function(input, output, session) {
   
   # Initialize shouldAnalyze to control when to run analysis
   shouldAnalyze <- reactiveVal(FALSE)  
-
+  
   
   # Observe file upload and update `dataset`
   observeEvent(input$file1, {
@@ -444,8 +451,8 @@ server <- function(input, output, session) {
       showModal(
         modalDialog(title = 'No data uploaded',
                     'Please upload a network on the Data Upload screen before clicking the button',
-        easyClose = TRUE,
-        footer = modalButton("Got it!"))
+                    easyClose = TRUE,
+                    footer = modalButton("Got it!"))
       )
       # Prevent further execution
       return()
@@ -481,7 +488,7 @@ server <- function(input, output, session) {
                      "Louvain" = cluster_louvain(g),
                      "Girvan-Newman" = cluster_edge_betweenness(g),
                      "Walktrap" = cluster_walktrap(g))
-
+    
     community_memberships(membership(result)) # Store community memberships
     network_object(g) # Store network object
     list(g = g, result = result, modularity = modularity(result), memberships = membership(result))
@@ -587,7 +594,7 @@ server <- function(input, output, session) {
       Category = c("Edge", "Vertex"),
       Counts = c(edge_count, vertex_count)
     )
-  
+
     ggplot(plot_df, aes(x = Counts, y = Category, fill = Category)) +
       geom_bar(stat = "identity") +
       scale_fill_manual(values = c("Edge" = "#1bbbff", "Vertex" = "#FF69B4"), name = "Category") +
@@ -626,7 +633,7 @@ server <- function(input, output, session) {
       coord_cartesian(xlim = c(0, 1)) + # Adjust x-axis limits
       coord_flip() # Flip the coordinates to make the bars vertical
   })
-   
+
   # Graph Indices Distance Plot
   
   output$DistancePlot <- renderPlot({
@@ -655,7 +662,6 @@ server <- function(input, output, session) {
       coord_cartesian(xlim = c(0, max(plot_df$Distances))) # Adjust x-axis limits
   })
 
-  
   # Graph Indices Centralization Plot
   
   output$CentralizationPlot <- renderPlot({
@@ -797,7 +803,7 @@ server <- function(input, output, session) {
     explanationOutput()
   })
   
-
+  
   # Activate the QAP analysis when "Run Analysis" button is clicked
   observeEvent(input$QAPAnalysis, {
     shouldQAPAnalyse(TRUE)
@@ -888,11 +894,11 @@ server <- function(input, output, session) {
     req(input$StatCompare)
     req(shouldStatisticCompare)
     if ('Degree' %in% input$statisticChoice){
-    g1 <- inet()
-    g2 <- inet2()
-    compare_statistics(g1, g2, statistics = c('Degree' = T),
-                       net1_name = gsub("\\.\\w+$", "", input$file1$name),
-                       net2_name = gsub("\\.\\w+$", "", input$file2$name))$degree_plot
+      g1 <- inet()
+      g2 <- inet2()
+      compare_statistics(g1, g2, statistics = c('Degree' = T),
+                         net1_name = gsub("\\.\\w+$", "", input$file1$name),
+                         net2_name = gsub("\\.\\w+$", "", input$file2$name))$degree_plot
     } else{
       NULL
     }
@@ -1090,7 +1096,7 @@ server <- function(input, output, session) {
     table[c('A<sub>6</sub>', 'A<sub>3</sub>', 'A<sub>1</sub>', 'A<sub>4</sub>', 'A<sub>2</sub>', 'A<sub>5</sub>'),c('A<sub>6</sub>', 'A<sub>3</sub>', 'A<sub>1</sub>', 'A<sub>4</sub>', 'A<sub>2</sub>', 'A<sub>5</sub>')]
   }, rownames = T, digits = 0, sanitize.text.function = function(x) x, width = '50%'
   )
-
+  
   # Function to export network data
   output$downloadNetwork <- downloadHandler(
     filename = function() {
@@ -1114,7 +1120,7 @@ server <- function(input, output, session) {
       }
     }
   )
-
+  
   output$errorMessage <- renderText({
     if (is.null(network_object()) && is.null(community_memberships())) {
       return("Error: No network and communities available. Please return to the 'Community Detection' tab.")
@@ -1126,7 +1132,7 @@ server <- function(input, output, session) {
       return(NULL)
     }
   })
-
+  
 }
 
 
