@@ -64,50 +64,50 @@ ui <- dashboardPage(
       ),
       tabItem(tabName = "dashboard",
               fluidPage(
-                column(width = 12, 
-                       h1("Network Dashboard", align = "center"),
-                       p("Now that a network has been imported, it is time to get a better understanding of its characteristics. The current page allows for a quick and comprehensive overview of your network through a variety of statistics, findings, and visualizations. The dashboard is designed to empower the laymen that have access to network data. Getting a better understanding of the network starts with a visual inspection of its structure. Therefore, the network is displayed in the interactive visualization below."),
-                       visNetworkOutput("networkPlot1", height = "350px"),
-                       p("Although visualizing the network serves as a useful method to obtain a holistic view of the network's structure and connections, it only scratches the surface of what can be discovered. Through further exploration with statistical measures and thus representing network characteristics as numbers, we can extract meaningful patterns, trends, and relationships that may not be immediately apparent from the visualization alone. These insights can help us better understand the underlying dynamics of the network, identify key nodes or clusters, detect anomalies or trends over time, and make informed decisions to optimize network performance or address specific challenges."),
-                       fluidRow(
-                         # More explanation on what the plot represent HERE
-                         column(width = 3, 
-                                plotOutput("CountPlot", width = "100%", height = "300px")
+                   column(width = 12, 
+                          h1("Network Dashboard", align = "center"),
+                          p("Now that a network has been imported, it is time to get a better understanding of its characteristics. The current page allows for a quick and comprehensive overview of your network through a variety of statistics, findings, and visualizations. The dashboard is designed to empower the laymen that have access to network data. Getting a better understanding of the network starts with a visual inspection of its structure. Therefore, the network is displayed in the interactive visualization below."),
+                          visNetworkOutput("networkPlot1", height = "350px"),
+                          p("Although visualizing the network serves as a useful method to obtain a holistic view of the network's structure and connections, it only scratches the surface of what can be discovered. Through further exploration with statistical measures and thus representing network characteristics as numbers, we can extract meaningful patterns, trends, and relationships that may not be immediately apparent from the visualization alone. These insights can help us better understand the underlying dynamics of the network, identify key nodes or clusters, detect anomalies or trends over time, and make informed decisions to optimize network performance or address specific challenges."),
+                          fluidRow(
+                           # More explanation on what the plot represent HERE
+                           column(width = 3, 
+                                  plotOutput("CountPlot", width = "100%", height = "300px")
+                                  ),
+                           column(width = 3, 
+                                  plotOutput("ScorePlot", width = "100%", height = "300px")
+                                  ),
+                           column(width = 3, 
+                                  plotOutput("DistancePlot", width = "100%", height = "300px")
+                                  ),
+                           column(width = 3,
+                                  plotOutput("CentralizationPlot", width = "100%", height = "300px"))
                          ),
-                         column(width = 3, 
-                                plotOutput("ScorePlot", width = "100%", height = "300px")
-                         ),
-                         column(width = 3, 
-                                plotOutput("DistancePlot", width = "100%", height = "300px")
-                         ),
-                         column(width = 3,
-                                plotOutput("CentralizationPlot", width = "100%", height = "300px"))
-                       ),
-                       h3("Exploring Vertex Level Indices"),
-                       p("The following section delves into visualizations of vertex-level indices, otherwise known as centrality measures, providing valuable insights into the overall structure and characteristics of the network. They concerns statistical numbers about the actor present in the network. There is a bit more flexibility here. This means that can choose the centrality measure of interest, allowing you to gain a deeper understanding of its relevance in the provided network."),
-                       
-                       h4("Histogram Analysis"),
-                       p("Histograms offer a comprehensive view of the distribution of vertex-level indices or centralities across the entire network. By visualizing the frequency of values within predefined bins, histograms enable you to identify the range, skewness, and outliers of the distribution."),
-                       
-                       h4("Boxplot Analysis"),
-                       p("Boxplots provide a concise summary of the distribution and variability of vertex-level indices, emphasizing key statistical measures such as the median, quartiles, and outliers."),
-                       fluidRow(
-                         column(width = 12,
-                                selectInput("centrality", "Choose the centrality measure of interest:",
-                                            choices = c("Degree", "Betweenness", "Closeness", "Eccentricity"),
-                                            selected = "Degree"),
-                                align = "center"),
-                         column(width = 6, 
-                                plotOutput("DistPlot", width = "100%", height = "350px")
-                         ),
-                         column(width = 6, 
-                                plotOutput("BoxPlot", width = "100%", height = "350px")
-                         ),
+                         h3("Exploring Vertex Level Indices"),
+                         p("The following section delves into visualizations of vertex-level indices, otherwise known as centrality measures, providing valuable insights into the overall structure and characteristics of the network. They concerns statistical numbers about the actor present in the network. There is a bit more flexibility here. This means that can choose the centrality measure of interest, allowing you to gain a deeper understanding of its relevance in the provided network."),
                          
-                       )
-                )
-                
-              )
+                         h4("Histogram Analysis"),
+                         p("Histograms offer a comprehensive view of the distribution of vertex-level indices or centralities across the entire network. By visualizing the frequency of values within predefined bins, histograms enable you to identify the range, skewness, and outliers of the distribution."),
+                         
+                         h4("Boxplot Analysis"),
+                         p("Boxplots provide a concise summary of the distribution and variability of vertex-level indices, emphasizing key statistical measures such as the median, quartiles, and outliers."),
+                         fluidRow(
+                           column(width = 12,
+                                  selectInput("centrality", "Choose the centrality measure of interest:",
+                                  choices = c("Degree", "Betweenness", "Closeness", "Eccentricity"),
+                                  selected = "Degree"),
+                                  align = "center"),
+                           column(width = 6, 
+                                  plotOutput("DistPlot", width = "100%", height = "350px")
+                                  ),
+                           column(width = 6, 
+                                  plotOutput("BoxPlot", width = "100%", height = "350px")
+                           ),
+                                  
+                         )
+                   )
+               
+           )
       ),
       tabItem(tabName = "cug_test",
               fluidPage(
@@ -340,7 +340,7 @@ server <- function(input, output, session) {
   
   # Define the sequence of tabs
   tabNames <- c("introduction", "data_upload", "dashboard", "cug_test", "community_detection", "network_comparison", "data_export")
-  
+
   # Function to navigate to the next tab
   observeEvent(input$nextTab, {
     currentTab <- which(tabNames == input$sidebar)
@@ -557,27 +557,27 @@ server <- function(input, output, session) {
   
   # Dashboard Network Plot
   output$networkPlot1 <- renderVisNetwork({
-    req(dataset())
-    g <- graph_from_data_frame(dataset(), directed = FALSE)
-    
-    # Set the color of the node
-    V(g)$color <- "#1bbbff"
-    
-    visNetwork::visIgraph(g) %>%
-      visIgraphLayout(layout = "layout_with_fr") %>%
-      visNodes(color = list(background = V(g)$color, border = "#2b2b2b", highlight = "#1F51FF"), 
-               shadow = list(enabled = TRUE, size = 10, x = 0, y = 0)) %>%
-      visEdges(
-        # arrows = 'to',
-        color = list(color = "#cccccc", highlight = "#FF69B4"),
-        shadow = list(enabled = FALSE)
-      ) %>%
-      visOptions(highlightNearest = list(enabled = TRUE, degree = 1, hover = TRUE), 
-                 nodesIdSelection = list(enabled = TRUE, style = "width: 150px;")) %>%
-      visLayout(randomSeed = 123) %>%
-      visInteraction(navigationButtons = TRUE) %>%
-      visEdges(smooth = FALSE) 
-  }
+      req(dataset())
+      g <- graph_from_data_frame(dataset(), directed = FALSE)
+      
+      # Set the color of the node
+      V(g)$color <- "#1bbbff"
+      
+      visNetwork::visIgraph(g) %>%
+        visIgraphLayout(layout = "layout_with_fr") %>%
+        visNodes(color = list(background = V(g)$color, border = "#2b2b2b", highlight = "#1F51FF"), 
+                 shadow = list(enabled = TRUE, size = 10, x = 0, y = 0)) %>%
+        visEdges(
+          # arrows = 'to',
+          color = list(color = "#cccccc", highlight = "#FF69B4"),
+          shadow = list(enabled = FALSE)
+        ) %>%
+        visOptions(highlightNearest = list(enabled = TRUE, degree = 1, hover = TRUE), 
+                   nodesIdSelection = list(enabled = TRUE, style = "width: 150px;")) %>%
+        visLayout(randomSeed = 123) %>%
+        visInteraction(navigationButtons = TRUE) %>%
+        visEdges(smooth = FALSE) 
+    }
   )
   
   # Graph Indices Count Plot
@@ -594,7 +594,7 @@ server <- function(input, output, session) {
       Category = c("Edge", "Vertex"),
       Counts = c(edge_count, vertex_count)
     )
-    
+
     ggplot(plot_df, aes(x = Counts, y = Category, fill = Category)) +
       geom_bar(stat = "identity") +
       scale_fill_manual(values = c("Edge" = "#1bbbff", "Vertex" = "#FF69B4"), name = "Category") +
@@ -633,7 +633,7 @@ server <- function(input, output, session) {
       coord_cartesian(xlim = c(0, 1)) + # Adjust x-axis limits
       coord_flip() # Flip the coordinates to make the bars vertical
   })
-  
+
   # Graph Indices Distance Plot
   
   output$DistancePlot <- renderPlot({
@@ -661,8 +661,7 @@ server <- function(input, output, session) {
       ) +
       coord_cartesian(xlim = c(0, max(plot_df$Distances))) # Adjust x-axis limits
   })
-  
-  
+
   # Graph Indices Centralization Plot
   
   output$CentralizationPlot <- renderPlot({
@@ -725,7 +724,7 @@ server <- function(input, output, session) {
       result = igraph::eccentricity(g, mode = 'all')
       binwidth = 0.1
     }
-    
+
     # Create a data frame containing the centrality measures
     centrality_df <- data.frame(Centrality = result)
     
