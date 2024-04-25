@@ -12,6 +12,7 @@ library(igraph)      # For network analysis (not explicitly used in provided sni
 library(visNetwork)
 library(ggplot2)
 library(english)
+library(shinyalert)
 #source(paste0(dirname(rstudioapi::getSourceEditorContext()$path), '/Comparison_script.R'))
 source('Comparison_script.R')
 
@@ -36,11 +37,14 @@ ui <- dashboardPage(
     tags$head(
       tags$style(HTML("
         .previous-button { position: fixed; top: 60px; left: 250px; z-index: 1050; }
+        .cheatsheet-button { position: fixed; top: 60px; right: 100px; z-index: 750; }
         .next-button { position: fixed; top: 60px; right: 20px; z-index: 100; }
+        .shinyalert-content { max-width: 600px; }
       "))
     ),
     uiOutput("prevButtonUI"),
     uiOutput("nextButtonUI"),
+    uiOutput("cheatsheetButtonUI"),
     tabItems(
       tabItem(tabName = "introduction",
               fluidRow(
@@ -48,7 +52,8 @@ ui <- dashboardPage(
                        wellPanel(
                          h1("Welcome!", align = "center"),
                          h3("Introduction:", align = "center"),
-                         p("Welcome to our interdisciplinary collaboration tutorial! This tutorial aims to provide researchers in the fields of digital design, marketing, and music with a user-friendly and non-technical introduction to understanding network data. By exploring the connections and dynamics within your research networks, we hope to empower you to enhance interdisciplinary collaboration and innovation within your respective domains.", style = "text-align: justify; padding: 20px;")
+                         p("Welcome to our interdisciplinary collaboration tutorial! This tutorial aims to provide researchers in the fields of digital design, marketing, and music with a user-friendly and non-technical introduction to understanding network data. By exploring the connections and dynamics within your research networks, we hope to empower you to enhance interdisciplinary collaboration and innovation within your respective domains.", style = "text-align: justify; padding: 20px;"),
+                         p("You can access a comprehensive statistical cheatsheet by simply clicking on the button provided.", style = "text-align: justify; padding: 20px;")
                        )
                 )
               )
@@ -336,6 +341,79 @@ server <- function(input, output, session) {
     if (!is.null(input$sidebar) && input$sidebar != "data_export") {  # Exclude on the last tab
       actionButton("nextTab", "Next", class = "next-button btn btn-primary")
     }
+  })
+  
+  # Dynamically render the "Previous" button
+  output$cheatsheetButtonUI <- renderUI({
+    actionButton("cheatsheet", "Cheatsheet", class = "cheatsheet-button btn btn-primary")
+  })
+  
+  # Function to navigate to the next tab
+  observeEvent(input$cheatsheet, {
+    shinyalert(
+      title = "Statistical Cheatsheet",
+      text =
+        "<div style='text-align: left;'>
+          <h3>Hypotheses</h3>
+          <p><b>Null Hypothesis (H0) & Alternative Hypothesis (H1):</b> In a statistical test, the null hypothesis is a statement that there is no effect or relationship, while the alternative hypothesis is the statement we want to find evidence for. For example, in a drug trial, the null hypothesis might be that the drug has no effect, while the alternative hypothesis is that the drug does have an effect.</p>
+        
+          <h3>Significance</h3>
+          <p><b>P-value:</b> The p-value is a measure of the strength of evidence against the null hypothesis. It tells us the probability of observing the data or something more extreme if the null hypothesis is true. A smaller p-value indicates stronger evidence against the null hypothesis.</p>
+          <p><b>Significance Level:</b> The significance level, often denoted as α (alpha), is the threshold used to determine statistical significance. Commonly used significance levels include 0.05 and 0.01, corresponding to a 5% and 1% chance, respectively, of incorrectly rejecting the null hypothesis.</p>
+        
+          <h3>Network Metrics</h3>
+          <p><b>Density:</b> Density measures how connected a network is, representing the proportion of actual connections to possible connections.</p>
+          <p><b>Transitivity:</b> Transitivity, or clustering coefficient, measures the likelihood that two nodes connected to the same node are also connected to each other.</p>
+          <p><b>Diameter:</b> Diameter is the longest shortest path between any pair of nodes in the network, indicating the maximum distance between nodes.</p>
+          <p><b>Mean Distance:</b> Mean distance is the average shortest path length between all pairs of nodes in the network.</p>
+        
+          <h3>Centrality Measures</h3>
+          <p><b>Betweenness Centrality:</b> Betweenness centrality measures the extent to which a node lies on the shortest paths between other nodes in the network.</p>
+          <p><b>Closeness Centrality:</b> Closeness centrality measures how close a node is to all other nodes in the network, based on the length of its shortest paths to all other nodes.</p>
+          <p><b>Degree Centrality:</b> Degree centrality measures the number of connections a node has in the network.</p>
+          <p><b>Eigenvector Centrality:</b> Eigenvector centrality measures the importance of a node in the network, considering both the node's connections and the connections of its neighbors.</p>
+        
+          <h3>Community Detection</h3>
+          <p><b>Communities:</b> Communities are groups of nodes in a network that are more densely connected to each other than to nodes outside the group.</p>
+          <p><b>Modularity Score:</b> Modularity is a measure of the quality of the division of a network into communities, with higher values indicating a better division.</p>
+          <p><b>Community Detection Algorithms:</b> Fast greedy, Louvain, Girvan-Newman, and Walktrap are algorithms used to detect communities in networks based on different criteria and approaches.</p>
+          <ul>
+            <li><strong>Fast Greedy:</strong>
+              <ul>
+                <li>This algorithm is like organizing a set of objects into clusters based on how closely they are related. Imagine you have a bunch of items that need to be grouped by similarity; the Fast Greedy method starts by considering each item in its own group. It then combines these groups step by step, each time choosing the combination that results in the most cohesive groups, until no further improvement is possible. This approach is fast and efficient, making it suitable for quickly finding a good grouping in large datasets where each item has many connections.</li>
+              </ul>
+            </li>
+            <li><strong>Louvain:</strong>
+              <ul>
+                <li>This algorithm is akin to sorting a large collection into subsets where each subset contains items that are more similar to each other than to items in other subsets. It begins with each item in its own subset and iteratively merges these subsets to maximize 'modularity,' a measure of how well the collection is divided. The process continues until the modularity cannot be increased further, indicating that the items are grouped in an optimal way. This method is known for its ability to handle very large collections, quickly identifying an optimal division.</li>
+              </ul>
+            </li>
+            <li><strong>Girvan-Newman:</strong>
+              <ul>
+                <li>This algorithm focuses on identifying the connections that are most critical for maintaining the overall structure of the network. It works by progressively removing these connections, which are identified through measures like 'betweenness' (a measure of how often a connection lies on the shortest path between pairs of items). This process gradually separates the network into distinct groups based on the connectivity between items. Although thorough, this method can be slower than others, especially for networks with a large number of items or connections.</li>
+              </ul>
+            </li>
+            <li><strong>Walktrap:</strong>
+              <ul>
+                <li>This algorithm is inspired by the idea of random walks within a network to discover groups of closely related items. It posits that short random walks are likely to stay within the same group because the items within a group are more densely interconnected. By analyzing the paths taken during these walks, Walktrap identifies which items tend to cluster together. This approach is effective for revealing the natural grouping within networks based on the connectivity and density of the connections between items.</li>
+              </ul>
+            </li>
+          </ul>
+          
+          <h3>Conditional Uniform Graph (CUG) Test</h3>
+          <p><b>CUG Test:</b> The CUG test evaluates the importance of connections in a network, identifying critical connections that bridge different parts of the network.</p>
+        
+          <h3>QAP Test</h3>
+          <p><b>QAP Test:</b> The QAP test compares the correlation between two networks while controlling for dependencies among observations, helping to assess the similarity or difference between networks.</p>
+          
+          <h3>Other Concepts</h3>
+          <p><b>Absolute & Mean:</b> Absolute refers to the actual value, while mean refers to the average value.</p>
+          <p><b>Local Bridges:</b> Local bridges are connections between nodes that bridge different communities in the network, facilitating communication between them.</p>
+          <p><b>Infinite Values:</b> Infinite values are values that are infinitely large or small, often indicating outliers or extreme values
+        </div>",
+    size = "l",
+      html = TRUE
+    )
   })
   
   # Define the sequence of tabs
