@@ -66,13 +66,12 @@ ui <- dashboardPage(
               fluidPage(
                    column(width = 12, 
                           div(style = "background-color: #f8f8f8; border: 1px solid #ddd; padding: 20px; border-radius: 5px;",
-                              h1("Network Dashboard", align = "center"),
+                              h3("Network Dashboard", align = "center"),
                               p("Now that a network has been imported, it is time to get a better understanding of its characteristics. The current page allows for a quick and comprehensive overview of your network through a variety of statistics, findings, and visualizations. The dashboard is designed to empower the laymen that have access to network data. Getting a better understanding of the network starts with a visual inspection of its structure. Therefore, the network is displayed in the interactive visualization below.")
                           ),
                           visNetworkOutput("networkPlot1", height = "350px"),
-                          p("Although visualizing the network serves as a useful method to obtain a holistic view of the network's structure and connections, it only scratches the surface of what can be discovered. Through further exploration with statistical measures and thus representing network characteristics as numbers, we can extract meaningful patterns, trends, and relationships that may not be immediately apparent from the visualization alone. These insights can help us better understand the underlying dynamics of the network, identify key nodes or clusters, detect anomalies or trends over time, and make informed decisions to optimize network performance or address specific challenges."),
+                          p("Although visualizing the network serves as a useful method to obtain a holistic view of the network's structure and connections, it only scratches the surface of what can be discovered. Through further exploration with statistical measures and thus representing network characteristics as numbers, we can extract meaningful patterns, trends, and relationships that may not be immediately apparent from the visualization alone. These insights can help us better understand the underlying dynamics of the network, identify key nodes or clusters, detect anomalies or trends over time, and make informed decisions to optimize network performance or address specific challenges. Explanations of the network statistics are defined in the statistical cheatsheet."),
                           fluidRow(
-                           # More explanation on what the plot represent HERE
                            column(width = 4, 
                                   plotOutput("CountPlot", width = "100%", height = "300px")
                                   ),
@@ -84,6 +83,50 @@ ui <- dashboardPage(
                                   ),
                            column(width = 4,
                                   plotOutput("CentralizationPlot", width = "100%", height = "300px"))
+                         ),
+                         hr(),
+                         
+                         fluidRow(
+                           column(width=6,
+                                  div(style = "display: flex; justify-content: center;",
+                                      div(style = "width: 75%; background-color: #1bbbff; border: 1px solid #ddd; padding: 16px; border-radius: 5px; color: white;",
+                                          div(style = "display: flex; align-items: center; justify-content: space-between;",
+                                              h3(style = "font-size: 16px; font-weight: bold; margin: 0;", "Transitivity:"),
+                                              h3(style = "font-size: 16px; font-weight: bold; margin: 0;", textOutput("transitivityOutput"))
+                                          ),
+                                          column(width=9, 
+                                                 p(style = "font-size: 14px; margin-top: 10px; margin-bottom: 0;", "The transitivity of the network measures the likelihood of two individuals who are connected to the same person in the network are also directly connected to each other. Higher transitivity values indicate a higher tendency for actors to connected with the 'friend of a friend'."),
+                                          ),
+                                          column(width=3,
+                                                 div(style = "font-size: 14px; margin-top: 10px; margin-bottom: 0;", 
+                                                     p("Low: < 0.2"), 
+                                                     p("Average: 0.2 - 0.4"), 
+                                                     p("High: > 0.4"),
+                                                     ),
+                                          )
+                                      )
+                                  )
+                           ),
+                           column(width=6,
+                                  div(style = "display: flex; justify-content: center;",
+                                      div(style = "width: 75%; background-color: #FF69B4; border: 1px solid #ddd; padding: 16px; border-radius: 5px; color: white;",
+                                          div(style = "display: flex; align-items: center; justify-content: space-between;",
+                                              h3(style = "font-size: 16px; font-weight: bold; margin: 0;", "Density:"),
+                                              h3(style = "font-size: 16px; font-weight: bold; margin: 0;", textOutput("densityOutput"))
+                                          ), 
+                                          column(width=9, 
+                                                 p(style = "font-size: 14px; margin-top: 10px; margin-bottom: 0;", "Density represents the proportion of actual connections in a network relative to the total number of possible connections. It reflects the extent of the connections or interaction between individuals, with higher values indicating many collaborative opportunities. "),
+                                          ),
+                                          column(width=3,
+                                                 div(style = "font-size: 14px; margin-top: 10px; margin-bottom: 0;", 
+                                                     p("Low: < 0.1"), 
+                                                     p("Average: 0.1 - 0.3"), 
+                                                     p("High: > 0.3"),
+                                                 ),
+                                          )
+                                      )
+                                  )
+                           )
                          ),
                          hr(),
                          div(style = "background-color: #f8f8f8; border: 1px solid #ddd; padding: 16px; border-radius: 5px;",
@@ -697,6 +740,20 @@ server <- function(input, output, session) {
       ) +
       coord_cartesian(xlim = c(0, max(plot_df$Distances))) # Adjust x-axis limits
   })
+  
+  # Render the transitivity
+  output$transitivityOutput <- renderText({
+    req(dataset())
+    g <- graph_from_data_frame(dataset(), directed = FALSE)
+    return (round(igraph::transitivity(g), 3))
+  })
+  
+  # Render the density
+  output$densityOutput <- renderText({
+    req(dataset())
+    g <- graph_from_data_frame(dataset(), directed = FALSE)
+    return(round(igraph::graph.density(g), 3))
+  })
 
   # Graph Indices Centralization Plot
   
@@ -725,7 +782,7 @@ server <- function(input, output, session) {
                                    "Eigenvector" = "#1F51FF"
       ), 
       name = "Category") +
-      labs(x = "Centralization", y = "Category", title = "Horizontal Bar Chart - Centralization") +
+      labs(x = "Centralization", y = "Category", title = "Vertical Bar Chart - Centralization") +
       theme_minimal() +
       theme(
         legend.position = "top",
