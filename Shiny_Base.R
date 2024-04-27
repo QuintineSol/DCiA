@@ -354,19 +354,39 @@ server <- function(input, output, session) {
       title = "Statistical Cheatsheet",
       text =
         "<div style='text-align: left;'>
-          <h3>Hypotheses</h3>
+          <h3>General Statistical Terms</h3>
+          <p><b>Metrics / Measures:</b> Quantitative measures used to describe characteristics of data, such as averages, variability, and relationships.</p>
+          <p><b>Distributions:</b> Patterns showing how data is spread out, like bell curves or uneven distributions.</p>
+          <p><b>Skewedness:</b> A way to describe the shape of the data distribution, indicating whether it's asymmetrical or balanced.</p>
+          <p><b>Outliers:</b> Unusual data points that stand apart from the rest, potentially indicating errors or unique cases.</p>
+          <p><b>Median:</b> The middle value in a dataset when arranged in ascending order, separating the higher and lower halves.</p>
+          <p><b>Mode:</b> The most frequent value in a dataset, representing the data point that occurs most often.</p>
+          <p><b>Minimum and Maximum:</b> The smallest and largest values in a dataset, respectively, defining the range of possible values.</p>
+          <p><b>Quantile:</b> A value that divides a dataset into equal-sized intervals. For example, the median is the quantile that divides the data into two equal halves.</p>
+          <p><b>Quartile:</b> Three values that divide a dataset into four equal parts. The first quartile (Q1) is the value below which 25% of the data falls, the second quartile (Q2) is the median, and the third quartile (Q3) is the value below which 75% of the data falls.</p>
+          <p><b>Percentile:</b> A value that indicates the percentage of data points that are less than or equal to it. For example, the 75th percentile (Q3) is the value below which 75% of the data falls.</p>
+          <p><b>Interquartile Range (IQR):</b> A measure of statistical dispersion, calculated as the difference between the third quartile (Q3) and the first quartile (Q1). It represents the spread of the middle 50% of the data.</p>
+          <p><b>Infinite Values:</b> Infinite values are values that are infinitely large or small, often indicating outliers or extreme values
+          
+          <h3>Hypothesis Testing</h3>
           <p><b>Null Hypothesis (H0) & Alternative Hypothesis (H1):</b> In a statistical test, the null hypothesis is a statement that there is no effect or relationship, while the alternative hypothesis is the statement we want to find evidence for. For example, in a drug trial, the null hypothesis might be that the drug has no effect, while the alternative hypothesis is that the drug does have an effect.</p>
-        
-          <h3>Significance</h3>
           <p><b>P-value:</b> The p-value is a measure of the strength of evidence against the null hypothesis. It tells us the probability of observing the data or something more extreme if the null hypothesis is true. A smaller p-value indicates stronger evidence against the null hypothesis.</p>
           <p><b>Significance Level:</b> The significance level, often denoted as α (alpha), is the threshold used to determine statistical significance. Commonly used significance levels include 0.05 and 0.01, corresponding to a 5% and 1% chance, respectively, of incorrectly rejecting the null hypothesis.</p>
         
+          <h3>Network Terms</h3>
+          <p><b>Nodes / Vertices:</b> Individual entities or points in a network, such as people in a social network or routers in a computer network.</p>
+          <p><b>Edges:</b> Connections or links between nodes in a network, representing relationships, interactions, or flows.</p>
+        
+          <h3>Distance Terms</h3>
+          <p><b>Radius:</b> The maximum distance from a central point to any point within a network or dataset, indicating its extent or reach.</p>
+          <p><b>Mean Distance:</b> The average distance between all pairs of nodes in a network, showing the typical separation between nodes.</p>
+          <p><b>Absolute Distance:</b> The distance between two nodes without considering direction or sign, measuring only the magnitude of the difference.</p>
+          <p><b>Diameter:</b> The longest shortest path between any pair of nodes in a network, representing the maximum distance between nodes.</p>
+      
           <h3>Network Metrics</h3>
           <p><b>Density:</b> Density measures how connected a network is, representing the proportion of actual connections to possible connections.</p>
           <p><b>Transitivity:</b> Transitivity, or clustering coefficient, measures the likelihood that two nodes connected to the same node are also connected to each other.</p>
-          <p><b>Diameter:</b> Diameter is the longest shortest path between any pair of nodes in the network, indicating the maximum distance between nodes.</p>
-          <p><b>Mean Distance:</b> Mean distance is the average shortest path length between all pairs of nodes in the network.</p>
-        
+          
           <h3>Centrality Measures</h3>
           <p><b>Betweenness Centrality:</b> Betweenness centrality measures the extent to which a node lies on the shortest paths between other nodes in the network.</p>
           <p><b>Closeness Centrality:</b> Closeness centrality measures how close a node is to all other nodes in the network, based on the length of its shortest paths to all other nodes.</p>
@@ -399,18 +419,14 @@ server <- function(input, output, session) {
               </ul>
             </li>
           </ul>
+          <p><b>Local Bridges:</b> Local bridges are connections between nodes that bridge different communities in the network, facilitating communication between them.</p>
           
           <h3>Conditional Uniform Graph (CUG) Test</h3>
           <p><b>CUG Test:</b> The CUG test evaluates the importance of connections in a network, identifying critical connections that bridge different parts of the network.</p>
         
           <h3>QAP Test</h3>
           <p><b>QAP Test:</b> The QAP test compares the correlation between two networks while controlling for dependencies among observations, helping to assess the similarity or difference between networks.</p>
-          
-          <h3>Other Concepts</h3>
-          <p><b>Absolute & Mean:</b> Absolute refers to the actual value, while mean refers to the average value.</p>
-          <p><b>Local Bridges:</b> Local bridges are connections between nodes that bridge different communities in the network, facilitating communication between them.</p>
-          <p><b>Infinite Values:</b> Infinite values are values that are infinitely large or small, often indicating outliers or extreme values
-        </div>",
+          </div>",
     size = "l",
       html = TRUE
     )
