@@ -72,12 +72,12 @@ ui <- dashboardPage(
                    column(width = 12, 
                           h1("Network Dashboard", align = "center"),
                           p("Now that a network has been imported, it is time to get a better understanding of its characteristics. The current page allows for a quick and comprehensive overview of your network through a variety of statistics, findings, and visualizations. The dashboard is designed to empower the laymen that have access to network data. Getting a better understanding of the network starts with a visual inspection of its structure. Therefore, the network is displayed in the interactive visualization below."),
-                          visNetworkOutput("networkPlot1", height = "350px"),
+                          withSpinner(visNetworkOutput("networkPlot1", height = "350px"), type = 4),
                           p("Although visualizing the network serves as a useful method to obtain a holistic view of the network's structure and connections, it only scratches the surface of what can be discovered. Through further exploration with statistical measures and thus representing network characteristics as numbers, we can extract meaningful patterns, trends, and relationships that may not be immediately apparent from the visualization alone. These insights can help us better understand the underlying dynamics of the network, identify key nodes or clusters, detect anomalies or trends over time, and make informed decisions to optimize network performance or address specific challenges."),
                           fluidRow(
                            # More explanation on what the plot represent HERE
                            column(width = 3, 
-                                  plotOutput("CountPlot", width = "100%", height = "300px")
+                                  withSpinner(plotOutput("CountPlot", width = "100%", height = "300px"), type = 4)
                                   ),
                            column(width = 3, 
                                   plotOutput("ScorePlot", width = "100%", height = "300px")
@@ -103,7 +103,7 @@ ui <- dashboardPage(
                                   selected = "Degree"),
                                   align = "center"),
                            column(width = 6, 
-                                  plotOutput("DistPlot", width = "100%", height = "350px")
+                                  withSpinner(plotOutput("DistPlot", width = "100%", height = "350px"), type = 4)
                                   ),
                            column(width = 6, 
                                   plotOutput("BoxPlot", width = "100%", height = "350px")
@@ -123,7 +123,7 @@ ui <- dashboardPage(
                   p("Imagine you have a big group of researchers and stakeholders from different fields. By using the Conditional Uniform Graph (CUG) test, you can figure out where there might be gaps in communication or places where people aren't working together as well as they could be. This helps to create better networks between researchers and stakeholders, which leads to more innovative ideas and better understanding of how generative AI can impact different industries."),
                   actionButton("runCUG", "Run CUG Test"),
                   h4("CUG Test Results"),
-                  verbatimTextOutput("cugTestOutput"),
+                  withSpinner(verbatimTextOutput("cugTestOutput"), type = 4),
                   h4("Hugging Face Explanation"),
                   p("Univariate Conditional Uniform Graph Test: This means we're looking at how important individual connections are in the network."),
                   p("Conditioning Method: This tells us what part of the network we're focusing on. In this case, we're looking specifically at the connections between different nodes (researchers) in the network."),
@@ -190,19 +190,9 @@ ui <- dashboardPage(
                 p('This tab will be focused on the comparison of two different networks, thus, please Upload a second network to compare to'),
                 fileInput('file2', 'Choose CSV/Excel File', accept = c('.csv', '.xlsx', '.xls')),
                 DT::dataTableOutput("dataTable2"),  # Renders the uploaded data table
-                h4('Correlation in the ties between the networks'),
-                p('In this part of the analysis a QAP methodology will be used to compare the correlation between two selected networks.\nThe QAP methodology is introduced to make sure that each of the observations do no longer have the dependent property which is normally the case when working with network data.\nIn short the QAP uses a simulation of the network to be able to see what would happen to the observations would they have been independent of each other. From these observations, the QAP can generate a probability density function, which can be used to generate the probabilities of a certain observation.\nUsing the table below as an exmaple, the ones represent that there is a tie between a pair of nodes and a 0 representing that there is not, which represents the network next to it.'),
-                fluidRow(
-                  column(width = 6,
-                         tableOutput('QAPtable1')),
-                  column(width = 6, 
-                         plotOutput('QAPNet'))),
-                p('After the network is established like in the example, the vertices get ordered randomly, so in our example it can for instance be 6,3,1,4,2,5. Than we get the following table'),
-                tableOutput('QAPtable2'), 
-                p('Finally we use this randomised network to calculate the correlation with the other non-randomised network. This correlation value is the value for a singular value. After this is repeated for a set number of times, onne could get a good idea of the distributions of the underlying statistics, which could finally be used to determine whether there is any statistical significance or not'),
-                tags$head(tags$style(HTML("#QAPtable2 table {background-color: white; color = black; border: 1px solid black} .table>tbody>tr>td, .table>tbody>tr>th, .table>tfoot>tr>td, .table>tfoot>tr>th, .table>thead>tr>td, .table>thead>tr>th {border: 1px solid black} .my_table_aa01 th {text-align: center !important;}", media="screen", type="text/css"))),
-                tags$head(tags$style(HTML("#QAPtable1 table {background-color: white; color = black; border: 1px solid black} .table>tbody>tr>td, .table>tbody>tr>th, .table>tfoot>tr>td, .table>tfoot>tr>th, .table>thead>tr>td, .table>thead>tr>th {border: 1px solid black} .my_table_aa01 th {text-align: center !important;}", media="screen", type="text/css"))),
-                p('Therefore, the number of repetitions which are done in the simulation is a very important metric, as this determines how many times the network is randomised and thus how good the obtained probability density function represents the actual situation. Therefore, ideally the QAP model would run very often to get the best approximation possible. However, this comes with a trade-off in the time it takes before the model is completed, which is highly dependent on the size and complexity of each network. Thus, the exact optimal value differs for each network. Therefore, it is advised to start with a lower number, like 100, and build up slowly such that the best balance between execution time and accuracy can be found.'),
+                h4('Correlation between the networks'),
+                p('The correlation between both networks will be computed using the QAP method, as explained in the Cheatsheet.'),
+                p('Therefore, the number of repetitions of scrambled networks which are done in the simulation is a very important metric, as this determines how good the results represent the actual situation. These repetitions come with a trade-off in the time it takes before the model is completed, which is highly dependent on the size and complexity of each network. Thus, the exact optimal value differs for each network. Therefore, it is advised to start with a lower number, like 100, and build up slowly such that the best balance between execution time and accuracy can be found.'),
                 numericInput('QAPreps', 'Number of repetitions:', 100, min = 10, max = 10000),
                 actionButton('QAPAnalysis', 'Run Analysis'), 
                 HTML('<h5><b>Output:</b></h5>'),
@@ -352,7 +342,7 @@ server <- function(input, output, session) {
   observeEvent(input$cheatsheet, {
     shinyalert(
       title = "Statistical Cheatsheet",
-      text =
+      text = 
         "<div style='text-align: left;'>
           <h3>General Statistical Terms</h3>
           <p><b>Metrics / Measures:</b> Quantitative measures used to describe characteristics of data, such as averages, variability, and relationships.</p>
@@ -425,8 +415,250 @@ server <- function(input, output, session) {
           <p><b>CUG Test:</b> The CUG test evaluates the importance of connections in a network, identifying critical connections that bridge different parts of the network.</p>
         
           <h3>QAP Test</h3>
-          <p><b>QAP Test:</b> The QAP test compares the correlation between two networks while controlling for dependencies among observations, helping to assess the similarity or difference between networks.</p>
-          </div>",
+          <p><b>QAP Test:</b> The QAP test compares a chosen network statistic between two different networks while controlling for dependencies among observations, helping to assess the similarity or difference between networks.</p>
+          <p>Using the following two networks, the inner workings of the QAP test will be explained</p>
+          <p> &nbsp; </p>
+          <figure class='half'>
+            <table>
+              <tr>
+                <td>
+                  <p> The following network will be referenced by <i>Network 1</i>: &emsp;</p>
+                  <img src='https://i.imgur.com/tT8eij5.png', width = '50%'>
+                </td>
+                <td>
+                  <p> The following network will be referenced by <i>Network 2</i>: &emsp; </p>
+                  <img src='https://i.imgur.com/sSS8wJ3.png', width = '50%'>
+                </td>
+              </tr>
+            </table>
+          </figure>
+          <p> &nbsp; </p>
+          <p> To be able to better show the workings, the networks need to be transferred to <b> Adjacency matrices</b>. These are tables which have <i>n</i> rows and <i>n</i> columns, where each row represents a node and and each column a node and <i>n</i> is therefore equal to the number of nodes in a network. The values of the table change from 0 to 1 based whether there is a connection between the node indicated by the row and the node indicated by the column. Thus, for instance, in network 1, the first row and 6th column will have a value of 1, due to the connection between nodes 1 and 6. Transfroming both of the example networks to these matrices, they will become:</p>
+          <p> &nbsp; </p>
+          <table>
+            <tr>
+              <td>
+                <p> <b> Network 1: </b> </p>
+                <table border='2' bgcolor = '#FFFFFF'>
+                  <tr> 
+                    <th></th>
+                    <th>&ensp;Node 1&ensp;</th>
+                    <th>&ensp;Node 2&ensp;</th>
+                    <th>&ensp;Node 3&ensp;</th>
+                    <th>&ensp;Node 4&ensp;</th>
+                    <th>&ensp;Node 5&ensp;</th>
+                    <th>&ensp;Node 6&ensp;</th>
+                  </tr>
+                  <tr>
+                    <th>&ensp;Node 1&ensp;</th>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                  </tr>
+                  <tr>
+                    <th>&ensp;Node 2&ensp;</th>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                  </tr>
+                  <tr>
+                    <th>&ensp;Node 3&ensp;</th>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                  </tr>
+                  <tr>
+                    <th>&ensp;Node 4&ensp;</th>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                  </tr>
+                  <tr>
+                    <th>&ensp;Node 5&ensp;</th>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                  </tr>
+                  <tr>
+                    <th>&ensp;Node 6&ensp;</th>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+              <p> &emsp;</p>
+              </td>
+              <td>
+                <p> <b> Network 2: </b> </p>
+                <table border='2'>
+                  <tr> 
+                    <th></th>
+                    <th>&ensp;Node 1&ensp;</th>
+                    <th>&ensp;Node 2&ensp;</th>
+                    <th>&ensp;Node 3&ensp;</th>
+                    <th>&ensp;Node 4&ensp;</th>
+                    <th>&ensp;Node 5&ensp;</th>
+                    <th>&ensp;Node 6&ensp;</th>
+                  </tr>
+                  <tr>
+                    <th>&ensp;Node 1&ensp;</th>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                  </tr>
+                  <tr>
+                    <th>&ensp;Node 2&ensp;</th>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                  </tr>
+                  <tr>
+                    <th>&ensp;Node 3&ensp;</th>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                  </tr>
+                  <tr>
+                    <th>&ensp;Node 4&ensp;</th>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                  </tr>
+                  <tr>
+                    <th>&ensp;Node 5&ensp;</th>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                  </tr>
+                  <tr>
+                    <th>&ensp;Node 6&ensp;</th>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+          <p> &nbsp; </p>
+          <p> These tables will then be used in the process of the QAP model. The QAP essentially scrambles the first table over and over again. These scrambles are done by randomly altering the order of the nodes, which will be reflected accordingly in both the row and the column of the table. Thus, if the order after the scramble would be 4-1-3-5-2-6, than the table of <i>Network 1</i> would look the following: </p> 
+          <p> &nbsp; </p>
+          <p> <b> Network 1: </b> </p>
+                <table border='2' bgcolor = '#FFFFFF'>
+                  <tr> 
+                    <th></th>
+                    <th>&ensp;Node 4&ensp;</th>
+                    <th>&ensp;Node 1&ensp;</th>
+                    <th>&ensp;Node 3&ensp;</th>
+                    <th>&ensp;Node 5&ensp;</th>
+                    <th>&ensp;Node 2&ensp;</th>
+                    <th>&ensp;Node 6&ensp;</th>
+                  </tr>
+                  <tr>
+                    <th>&ensp;Node 4&ensp;</th>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                  </tr>
+                  <tr>
+                    <th>&ensp;Node 1&ensp;</th>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                  </tr>
+                  <tr>
+                    <th>&ensp;Node 3&ensp;</th>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                  </tr>
+                  <tr>
+                    <th>&ensp;Node 5&ensp;</th>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                  </tr>
+                  <tr>
+                    <th>&ensp;Node 2&ensp;</th>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                  </tr>
+                  <tr>
+                    <th>&ensp;Node 6&ensp;</th>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                  </tr>
+               </table>
+            <p> &nbsp; </p>
+            <p> Using this now scrambled table the algorithm will compute the correlation<sup>1</sup> between the scrambled network and the unscrambled second network, after which the value is saved and the scrambing and calculation is repeated many times (often 1000 times or higher, but it depends on the calculation time). Using all the obtained values, it can be calculated how 'special' the original value between the two networks is by comparing how many of the random observations are smaller than the actual value and how many of the random observations are larger than the actual value. Depending on the hypothesis which is being tested, the <b>p-value</b> will either of these two values:</p>
+            <p> &nbsp; </p>
+            <ul>
+              <li> If we want to test whether the observed correlation is <b>significantly bigger</b> than the random networks, we will use the proportion of random observations which were <b>smaller</b> than the actual statistic as the p-value </li>
+              <li> If we want to test whether the observed correlation is <b>significantly smaller</b> than the random networks, we will use the proportion of random observations which were <b>bigger</b> than the actual statistic as the p-value</li>
+            </ul>
+            <p> &nbsp; </p>
+            <p> Using the according p-value, it can then be calculated whether the observed statistic is significant or not </p>
+            <p> &nbsp; </p>
+            <p> <sup>1</sup> The formula for the correlation is out of the scope of this tutorial, but more informtion on it can be found <a href = https://www.michelecoscia.com/wp-content/uploads/2021/10/nvd_corr.pdf> in this paper </a>.</p>
+        </div>",
     size = "l",
       html = TRUE
     )
