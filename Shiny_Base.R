@@ -54,7 +54,7 @@ ui <- dashboardPage(
                          h1("Welcome!", align = "center"),
                          h3("Introduction:", align = "center"),
                          p("Welcome to our interdisciplinary collaboration tutorial! This tutorial aims to provide researchers in the fields of digital design, marketing, and music with a user-friendly and non-technical introduction to understanding network data. By exploring the connections and dynamics within your research networks, we hope to empower you to enhance interdisciplinary collaboration and innovation within your respective domains.", style = "text-align: justify; padding: 20px;"),
-                         p("You can access a comprehensive statistical cheatsheet by simply clicking on the button provided.", style = "text-align: justify; padding: 20px;")
+                         p("You can access a cheatsheet with more information on the statistical terminology and the methods by simply clicking on the button provided.", style = "text-align: justify; padding: 20px;")
                        )
                 )
               )
@@ -190,42 +190,64 @@ ui <- dashboardPage(
       tabItem(tabName = 'network_comparison',
               fluidPage(
                 h3("Network comaprison Page", align = "center"),
-                p('This tab will be focused on the comparison of two different networks, thus, please Upload a second network to compare to'),
+                p('This tab will be focused on the comparison of two different networks, thus, please upload a second network to compare to. This network should meet the following requirements:'),
+                # Add requirements based on import
                 fileInput('file2', 'Choose CSV/Excel File', accept = c('.csv', '.xlsx', '.xls')),
                 DT::dataTableOutput("dataTable2"),  # Renders the uploaded data table
                 h4('Correlation between the networks'),
-                p('The correlation between both networks will be computed using the QAP method, as explained in the Cheatsheet.'),
+                p('The correlation between both networks will be computed using the ',strong('QAP method'),', as explained in the Cheatsheet. Before this is performed the function makes sure that the nodes in both of the networks match by adding missing nodes as isolates to the other network.'),
                 p('Therefore, the number of repetitions of scrambled networks which are done in the simulation is a very important metric, as this determines how good the results represent the actual situation. These repetitions come with a trade-off in the time it takes before the model is completed, which is highly dependent on the size and complexity of each network. Thus, the exact optimal value differs for each network. Therefore, it is advised to start with a lower number, like 100, and build up slowly such that the best balance between execution time and accuracy can be found.'),
                 numericInput('QAPreps', 'Number of repetitions:', 100, min = 10, max = 10000),
+                p('The output will show two different representations of the same result. At first, the results will be shown in textual format. In here, first the', strong('test statistic'), 'will be shown, which represents the correlation observed between both networks. After this the text will output two estimated p-values. Which one is relevant is dependent on the chosen hypothesis:'),
+                tags$ul(
+                  tags$li('If the test is whether the correlation between the networks is', strong('higher'), 'than in the randomly observed networks, p(f(perm) >= f(d)) is the relevant p-value'),
+                  tags$li('If the test is whether the correlation between the networks is', strong('lower'), 'than in the randomly observed networks, p(f(perm) <= f(d)) is the relevant p-value')
+                ),
+                p('Using this', strong('p-value'), 'it can then be decided whether the null hypothesis can be rejected or not'),
                 actionButton('QAPAnalysis', 'Run Analysis'), 
                 HTML('<h5><b>Output:</b></h5>'),
                 verbatimTextOutput('QAP'),
+                conditionalPanel("input.QAPAnalysis > 0",p('Next to the textual output, there is also a visual output of the results. Using the test statistic found in the textual output, we can compare it with the values of the random networks. These are displayed underneatch, with the dotted line representing the', strong('test statistic'), '(in special cases, the test statistic is so big or small that it will not show in the graph) and the other line representing how the values of the random networks are distributed. If the test statistic is all the way to the right, it indicates that the test statistic is significantly bigger than the random networks, whilst if it is all the way to the left, it is significantly smaller than the random observations. It can also be the case that the test statistic is in the middle of the observations. In this case, the statistic is likely to stem from randomness, and thus, there is no special correlation between the networks.')),
                 withSpinner(plotOutput('QAPplot'), type = 4),
+                p('After these results are obtained there are 3 possible outcomes:'),
+                tags$ul(
+                  tags$li('The test statistic is', strong('significantly higher'), 'than the random observations: There is a high correlation between the networks, thus, actors (not) connected in one network are also likely (not) to be connected to each other in the other network.'),
+                  tags$li('The test statistic is', strong('significantly lower'), 'than the random observations: There is a high correlation between the networks, thus, actors connected in one network are likely not to be connected to each other in the other network .'),
+                  tags$li('The test statistic is', strong('not significantly different'), 'from the random observations: In this case there no correlation between the networks, thus, the networks are unlikely to effect each other')
+                ),
+                p('These results come with the caveat that correlation does not mean causation, meaning that if two networks are correlated, it does not directly mean that the ties in one network are the causes for ties in the other network. To be able to establish this, more research should be done based on the methodologies presented in An, et al. (2022)', tags$sup('1')),
                 h4('Statistical differences between the networks'),
+                p('There are 2 different network measures which currently can be compared across both networks:'),
+                tags$ul(
+                  tags$li(strong('Mean degree centrality:'),'As said in the cheatsheet, this compares the mean number of ties each node in the network has. This can for instance be used to check whether an intervention has led to an increase in the number of ties across the network'),
+                  tags$li(strong('Mean closeness centrality:'),'As said in the cheatsheet, this compares the mean distance each node has to all the other connected nodes. This can for instance be used to check whether an intervention has led to actors needing less people to reach each other, thus leading to a more closely connected network')
+                ),
                 selectInput('statisticChoice', 'What statistics should be compared in the networks?', 
-                            choices = c('Degree', 'Closeness', 'Betweenness'), multiple = T)),
-              actionButton('StatCompare', 'Run Analysis'),
-              verbatimTextOutput('Stats'),
-              conditionalPanel("input.statisticChoice.includes('Degree')", withSpinner(plotOutput('degree_plot'), type = 4)),
-              conditionalPanel("input.statisticChoice.includes('Closeness')", withSpinner(plotOutput('closeness_plot'), type = 4)),
-              conditionalPanel("input.statisticChoice.includes('Betweenness')", withSpinner(plotOutput('betweenness_plot'), type = 4)),
-              h4('Most important actors in both networks:'),
-              selectInput('ActorMetric', 'What statistic should be used to determine the most important actors?', 
+                            choices = c('Degree', 'Closeness'), multiple = T),
+                actionButton('StatCompare', 'Run Analysis'),
+                verbatimTextOutput('Stats'),
+                conditionalPanel("input.statisticChoice.includes('Degree')", withSpinner(plotOutput('degree_plot'), type = 4)),
+                conditionalPanel("input.statisticChoice.includes('Closeness')", withSpinner(plotOutput('closeness_plot'), type = 4)),
+                conditionalPanel("input.statisticChoice.includes('Betweenness')", withSpinner(plotOutput('betweenness_plot'), type = 4)),
+                h4('Most important actors in both networks:'),
+                selectInput('ActorMetric', 'What statistic should be used to determine the most important actors?', 
                           choices = c('Degree','Closeness','Betweenness'), selected = 'betweenness'),
-              numericInput('ActorNum', 'How many actors should be retrieved', 5, min = 1, max = NA),
-              actionButton('ActorComparison', 'Run Analysis'),
-              verbatimTextOutput('ActorCompText'),
-              withSpinner(DT::dataTableOutput('DTActorComp'), type = 4),
-              h4('Most important ties in both networks:'),
-              selectInput('BridgeMetric', 'What statistic should be used to determine the most important ties?', 
+                numericInput('ActorNum', 'How many actors should be retrieved', 5, min = 1, max = NA),
+                actionButton('ActorComparison', 'Run Analysis'),
+                verbatimTextOutput('ActorCompText'),
+                withSpinner(DT::dataTableOutput('DTActorComp'), type = 4),
+                h4('Most important ties in both networks:'),
+                selectInput('BridgeMetric', 'What statistic should be used to determine the most important ties?', 
                           choices = c('Absolute', 'Mean'), selected = 'mean'),
-              numericInput('BridgeNum', 'How many ties should be retrieved', 5, min = 1, max = NA),
-              checkboxGroupInput('BridgeVars', 'Extra choices', 
+                numericInput('BridgeNum', 'How many ties should be retrieved', 5, min = 1, max = NA),
+                checkboxGroupInput('BridgeVars', 'Extra choices', 
                                  choices = c('Only local bridges should be considered' = 'Bridges', 'Infinite values should be discarded' = 'drop.infs')),
-              actionButton('BridgeComparison', 'Run Analysis'),
-              verbatimTextOutput('BridgeCompText'),
-              withSpinner(DT::dataTableOutput('DTBridgeComp'), type = 4),
-              
+                actionButton('BridgeComparison', 'Run Analysis'),
+                verbatimTextOutput('BridgeCompText'),
+                withSpinner(DT::dataTableOutput('DTBridgeComp'), type = 4),
+                p('   '),
+                p(tags$sup('1'), 'An, W., Beauvile, R., & Rosche, B. (2022). Causal network analysis. Annual Review of Sociology, 48, 23-41.', tags$a('As seen here', href = 'https://www.annualreviews.org/docserver/fulltext/soc/48/1/annurev-soc-030320-102100.pdf?expires=1714399219&id=id&accname=guest&checksum=20AF90A77ADC63CB9E6D454E956302F1'))
+              )
       ),
       
       tabItem(tabName = "data_export",
@@ -651,7 +673,7 @@ server <- function(input, output, session) {
                   </tr>
                </table>
             <p> &nbsp; </p>
-            <p> Using this now scrambled table the algorithm will compute the correlation<sup>1</sup> between the scrambled network and the unscrambled second network, after which the value is saved and the scrambing and calculation is repeated many times (often 1000 times or higher, but it depends on the calculation time). Using all the obtained values, it can be calculated how 'special' the original value between the two networks is by comparing how many of the random observations are smaller than the actual value and how many of the random observations are larger than the actual value. Depending on the hypothesis which is being tested, the <b>p-value</b> will either of these two values:</p>
+            <p> Using this now scrambled table the algorithm will compute the correlation<sup>1</sup> between the scrambled network and the unscrambled second network, after which the value is saved and the scrambing and calculation is repeated many times (often 1000 times or higher, but it depends on the calculation time), where more repetitions give a better reflection of reality. Using all the obtained values, it can be calculated how 'special' the original value between the two networks is by comparing how many of the random observations are smaller than the actual value and how many of the random observations are larger than the actual value. Depending on the hypothesis which is being tested, the <b>p-value</b> will either of these two values:</p>
             <p> &nbsp; </p>
             <ul>
               <li> If we want to test whether the observed correlation is <b>significantly bigger</b> than the random networks, we will use the proportion of random observations which were <b>smaller</b> than the actual statistic as the p-value </li>
