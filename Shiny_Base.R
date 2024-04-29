@@ -24,12 +24,12 @@ ui <- dashboardPage(
   dashboardSidebar(
     sidebarMenu(id = "sidebar",
                 menuItem("Introduction", tabName = "introduction"),
-                menuItem("Data Upload", tabName = "data_upload"),
-                menuItem("Network Dashboard", tabName = "dashboard"),
-                menuItem("Connection Importance", tabName = "cug_test"),
-                menuItem("Community Detection", tabName = "community_detection"),
-                menuItem("Network Comparison", tabName = 'network_comparison'),
-                menuItem("Data Export", tabName = "data_export")
+                menuItem("Upload Data", tabName = "data_upload"),
+                menuItem("Explore Network", tabName = "dashboard"),
+                menuItem("Critical Connections", tabName = "cug_test"),
+                menuItem("Find Communities", tabName = "community_detection"),
+                menuItem("Compare Networks", tabName = 'network_comparison'),
+                menuItem("Export Data", tabName = "data_export")
     )
   ),
   dashboardBody(
