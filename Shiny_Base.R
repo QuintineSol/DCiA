@@ -15,8 +15,6 @@ library(english)
 source(paste0(dirname(rstudioapi::getSourceEditorContext()$path), '/Comparison_script.R'))
 #source('Comparison_script.R')
 
-# hallo wereld
-
 # Setting the Hugging Face API key (ensure this is securely managed in production)
 Sys.setenv(HUGGINGFACE_API_KEY = "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")
 
