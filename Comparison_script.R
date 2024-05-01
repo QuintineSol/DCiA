@@ -345,6 +345,25 @@ bridge_comp = function(network1, network2, method = 'Mean', net1_name, net2_name
   
 }
 
+find_important_actors = function(network, metric = 'Degree', n_actors = 7){
+  if (metric == 'Closeness'){
+    igraph::E(network)$weight = 1
+    important_actors = names(sort(igraph::closeness(network), decreasing = T)[1:n_actors])
+    values = igraph::closeness(network)[important_actors]
+  } else if (metric == 'Betweenness'){
+    igraph::E(network)$weight = 1
+    important_actors = names(sort(igraph::betweenness(network), decreasing = T)[1:n_actors])
+    values = igraph::betweenness(network)[important_actors]
+  } else if (metric == 'Degree'){
+    important_actors = names(sort(igraph::degree(network), decreasing = T)[1:n_actors])
+    values = igraph::degree(network)[important_actors]
+  } else{
+    stop('No relevant statistic selected')
+  }
+  res_df = data.frame(Important_Actors = important_actors, Metric_Value = values)
+  return(res_df)
+}
+
 
 
 #bridge_comp(graph_grants_people, graph_co_author, net1_name = 'hoi', net2_name = 'hoi', method = 'Absolute')

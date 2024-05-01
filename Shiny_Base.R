@@ -1530,6 +1530,15 @@ server <- function(input, output, session) {
     }
   })
   
+  # Retrieve the table showing the most important actors
+  output$ActorTable = DT::renderDataTable({
+    req(dataset())
+    req(input$ActorMetricD)
+    req(input$ActorNumD)
+    g <- graph_from_data_frame(dataset(), directed = FALSE)
+    find_important_actors(g, metric = input$ActorMetricD, n_actors = input$ActorNumD)
+  })
+  
 }
 
 
