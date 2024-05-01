@@ -66,128 +66,128 @@ ui <- dashboardPage(
       ),
       tabItem(tabName = "dashboard",
               fluidPage(
-                   column(width = 12, 
-                          div(style = "background-color: #f8f8f8; border: 1px solid #ddd; padding: 20px; border-radius: 5px;",
-                              h3("Network Dashboard", align = "center"),
-                              p("Now that a network has been imported, it is time to get a better understanding of its characteristics. The current page allows for a quick and comprehensive overview of your network through a variety of statistics, findings, and visualizations. The dashboard is designed to empower the laymen that have access to network data. Getting a better understanding of the network starts with a visual inspection of its structure. Therefore, the network is displayed in the interactive visualization below.")
-                          ),
-                          visNetworkOutput("networkPlot1", height = "350px"),
-                          p("Although visualizing the network serves as a useful method to obtain a holistic view of the network's structure and connections, it only scratches the surface of what can be discovered. Through further exploration with statistical measures and thus representing network characteristics as numbers, we can extract meaningful patterns, trends, and relationships that may not be immediately apparent from the visualization alone. These insights can help us better understand the underlying dynamics of the network, identify key nodes or clusters, detect anomalies or trends over time, and make informed decisions to optimize network performance or address specific challenges. Explanations of the network statistics are defined in the statistical cheatsheet."),
-                          fluidRow(
-                           column(width = 4, 
-                                  plotOutput("CountPlot", width = "100%", height = "300px")
-                                  ),
-                           # column(width = 3, 
-                           #        plotOutput("ScorePlot", width = "100%", height = "300px")
-                           #        ),
-                           column(width = 4, 
-                                  plotOutput("DistancePlot", width = "100%", height = "300px")
-                                  ),
-                           column(width = 4,
-                                  plotOutput("CentralizationPlot", width = "100%", height = "300px"))
+                column(width = 12, 
+                       div(style = "background-color: #f8f8f8; border: 1px solid #ddd; padding: 20px; border-radius: 5px;",
+                           h3("Network Dashboard", align = "center"),
+                           p("Now that a network has been imported, it is time to get a better understanding of its characteristics. The current page allows for a quick and comprehensive overview of your network through a variety of statistics, findings, and visualizations. The dashboard is designed to empower the laymen that have access to network data. Getting a better understanding of the network starts with a visual inspection of its structure. Therefore, the network is displayed in the interactive visualization below.")
+                       ),
+                       visNetworkOutput("networkPlot1", height = "350px"),
+                       p("Although visualizing the network serves as a useful method to obtain a holistic view of the network's structure and connections, it only scratches the surface of what can be discovered. Through further exploration with statistical measures and thus representing network characteristics as numbers, we can extract meaningful patterns, trends, and relationships that may not be immediately apparent from the visualization alone. These insights can help us better understand the underlying dynamics of the network, identify key nodes or clusters, detect anomalies or trends over time, and make informed decisions to optimize network performance or address specific challenges. Explanations of the network statistics are defined in the statistical cheatsheet."),
+                       fluidRow(
+                         column(width = 4, 
+                                plotOutput("CountPlot", width = "100%", height = "300px")
                          ),
-                         hr(),
-                         
-                         fluidRow(
-                           column(width=6,
-                                  div(style = "display: flex; justify-content: center;",
-                                      div(style = "width: 75%; background-color: #1bbbff; border: 1px solid #ddd; padding: 16px; border-radius: 5px; color: white;",
-                                          div(style = "display: flex; align-items: center; justify-content: space-between;",
-                                              h3(style = "font-size: 16px; font-weight: bold; margin: 0;", "Transitivity:"),
-                                              h3(style = "font-size: 16px; font-weight: bold; margin: 0;", textOutput("transitivityOutput"))
-                                          ),
-                                          column(width=9, 
-                                                 p(style = "font-size: 14px; margin-top: 10px; margin-bottom: 0;", "The transitivity of the network measures the likelihood of two individuals who are connected to the same person in the network are also directly connected to each other. Higher transitivity values indicate a higher tendency for actors to connected with the 'friend of a friend'."),
-                                          ),
-                                          column(width=3,
-                                                 div(style = "font-size: 14px; margin-top: 10px; margin-bottom: 0;", 
-                                                     p("Low: < 0.2"), 
-                                                     p("Average: 0.2 - 0.4"), 
-                                                     p("High: > 0.4"),
-                                                     ),
-                                          )
-                                      )
-                                  )
-                           ),
-                           column(width=6,
-                                  div(style = "display: flex; justify-content: center;",
-                                      div(style = "width: 75%; background-color: #FF69B4; border: 1px solid #ddd; padding: 16px; border-radius: 5px; color: white;",
-                                          div(style = "display: flex; align-items: center; justify-content: space-between;",
-                                              h3(style = "font-size: 16px; font-weight: bold; margin: 0;", "Density:"),
-                                              h3(style = "font-size: 16px; font-weight: bold; margin: 0;", textOutput("densityOutput"))
-                                          ), 
-                                          column(width=9, 
-                                                 p(style = "font-size: 14px; margin-top: 10px; margin-bottom: 0;", "Density represents the proportion of actual connections in a network relative to the total number of possible connections. It reflects the extent of the connections or interaction between individuals, with higher values indicating many collaborative opportunities. "),
-                                          ),
-                                          column(width=3,
-                                                 div(style = "font-size: 14px; margin-top: 10px; margin-bottom: 0;", 
-                                                     p("Low: < 0.1"), 
-                                                     p("Average: 0.1 - 0.3"), 
-                                                     p("High: > 0.3"),
-                                                 ),
-                                          )
-                                      )
-                                  )
-                           )
+                         # column(width = 3, 
+                         #        plotOutput("ScorePlot", width = "100%", height = "300px")
+                         #        ),
+                         column(width = 4, 
+                                plotOutput("DistancePlot", width = "100%", height = "300px")
                          ),
-                         hr(),
-                         div(style = "background-color: #f8f8f8; border: 1px solid #ddd; padding: 16px; border-radius: 5px;",
-                         h3("Discover Distributions", align="center"),
-                         p("The following section delves into visualizations of distributions. There are various graphical representations that can be used to portray distributions. In statistics, distributions refer to the frequency of possible values or outcomes occurring in a dataset.  In this regard, distributions can also be used to obtain valuable insights into the overall structure and characteristics of the network. The most common visualizations of distributions are histograms and boxplots, which are implemented below for inspection. There is a bit more flexibility here compared to previous visualizations. It means that can choose the centrality measure of interest, allowing you to gain a deeper understanding of its relevance in the provided network. Do not hesitate to refer to the statistical cheatsheet!"),
+                         column(width = 4,
+                                plotOutput("CentralizationPlot", width = "100%", height = "300px"))
+                       ),
+                       hr(),
+                       
+                       fluidRow(
+                         column(width=6,
+                                div(style = "display: flex; justify-content: center;",
+                                    div(style = "width: 75%; background-color: #1bbbff; border: 1px solid #ddd; padding: 16px; border-radius: 5px; color: white;",
+                                        div(style = "display: flex; align-items: center; justify-content: space-between;",
+                                            h3(style = "font-size: 16px; font-weight: bold; margin: 0;", "Transitivity:"),
+                                            h3(style = "font-size: 16px; font-weight: bold; margin: 0;", textOutput("transitivityOutput"))
+                                        ),
+                                        column(width=9, 
+                                               p(style = "font-size: 14px; margin-top: 10px; margin-bottom: 0;", "The transitivity of the network measures the likelihood of two individuals who are connected to the same person in the network are also directly connected to each other. Higher transitivity values indicate a higher tendency for actors to connected with the 'friend of a friend'."),
+                                        ),
+                                        column(width=3,
+                                               div(style = "font-size: 14px; margin-top: 10px; margin-bottom: 0;", 
+                                                   p("Low: < 0.2"), 
+                                                   p("Average: 0.2 - 0.4"), 
+                                                   p("High: > 0.4"),
+                                               ),
+                                        )
+                                    )
+                                )
                          ),
-                         hr(),
-                         div(
-                           p("When evaluating visualizations of distributions in the form of histograms and boxplots there are distinct key points of interest."),
-                           tags$ul(
-                             tags$li("Try to examine the shape and spread of the distribution. For example, a centrality measure of interest might exhibits a shape that is primarily right-skewed, with the bulk of the values situated on the left and a tail on the right. This often suggests that there the network is subject to a hierarchical differences between the actors in the network."),
-                             tags$li("Assess the shape and spread of the distribution. The shape serves as the  overview of the distributions. However, the shape is dictated by the ranges and scales presented in the visualization. The spread thus helps interpreting the distribution. Especially, both extremes of the x-axis, the minimum and maximum value, are interesting in this regard. "),
-                             tags$li("Lastly, these visualizations, in particular the boxplot, excel in highlighting outliers in the network. Outlying actor in this context represents those actors that exert significantly difference connectivity patterns compared to the majority of the actors. The boxplot visualizes the outliers with box dots."),
-                           ),
-                           ),
-                         fluidRow(column(width = 4,
-                           h4("Histogram"),
-                           p("The left-hand visualization represents a histogram. Histograms offer a comprehensive view of the distribution of node-level measures or centralities across the entire network. By visualizing the frequency of values within predefined bins, histograms enable you to identify the range, skewness, and outliers of the distribution."),
-                           selectInput("centrality", "Choose the centrality measure of interest:",
-                                       choices = c("Degree", "Betweenness", "Closeness", "Eccentricity"),
-                                       selected = "Degree"),
-                           ),
-                           column(width = 8,
-                           h4("Boxplot"),
-                           div(
-                           p("Compared to a histogram, a boxplot is can be considerd more statistically-driven. Hence, the boxplot requires more explanation. It aims to visualize a summary of key statistical characteristics of the centrality measure distribution. The main components of the boxplot are:"),
-                           tags$ul(
-                             tags$li(strong("The box: "),"This represents the middle 50% of the values proportion, known as the interquartile range (IQR). The bottom of the box is the 25th percentile (Q1) and the top is the 75th percentile (Q3). The line in the middle of the box is the median (Q2), which divides the data in half. The placement of the box indicates skewedness."),
-                             tags$li(strong("The whiskers: ")," These lines extending from the box show the range of the data, up to 1.5 times the midspread. Any values beyond the whiskers are considered potential outliers."),
-                             tags$li(strong("The outliers: "), "Any data points that fall outside the whiskers are plotted individually as outliers. These are values that are unusually high or low compared to the rest of the distribution."),
-                           ),
-                           ),
-                           ),
-                         ),
-                         fluidRow(
-                           column(width = 6, 
-                                  plotOutput("DistPlot", width = "100%", height = "350px")
-                                  ),
-                           column(width = 6, 
-                                  plotOutput("BoxPlot", width = "100%", height = "350px")
-                           ),
-                                  
-                         ),
-                         hr(),
-                         fluidRow(
-                           column(width = 4,
-                                  div(style = "background-color: #f8f8f8; border: 1px solid #ddd; padding: 16px; border-radius: 5px;",
-                                  h3("Most Important Actors"),
-                                  p("One of the most insightful information about the network is are the most important actors. Importance in this context is subjective. For instance, one might find a popular actor with many connections the most important, whereas others define them as those actors that connect faculties. In other words, your definition of importance is dictated by your interest. This interest can be encapsulated by a centrality measure. In the following section, you can choose a centrality measure to base the most important actors on. Choose wisely! "),
-                                  ),
-                                  selectInput('ActorMetricD', 'What statistic should be used to determine the most important actors?', 
-                                              choices = c('Degree','Closeness','Betweenness'), selected = 'Degree'),
-                                  numericInput('ActorNumD', 'How many actors should be retrieved?', 5, min = 1, max = NA)
-                           ),
-                           column(width = 8,
-                                  DT::dataTableOutput("ActorTable")
-                           )
+                         column(width=6,
+                                div(style = "display: flex; justify-content: center;",
+                                    div(style = "width: 75%; background-color: #FF69B4; border: 1px solid #ddd; padding: 16px; border-radius: 5px; color: white;",
+                                        div(style = "display: flex; align-items: center; justify-content: space-between;",
+                                            h3(style = "font-size: 16px; font-weight: bold; margin: 0;", "Density:"),
+                                            h3(style = "font-size: 16px; font-weight: bold; margin: 0;", textOutput("densityOutput"))
+                                        ), 
+                                        column(width=9, 
+                                               p(style = "font-size: 14px; margin-top: 10px; margin-bottom: 0;", "Density represents the proportion of actual connections in a network relative to the total number of possible connections. It reflects the extent of the connections or interaction between individuals, with higher values indicating many collaborative opportunities. "),
+                                        ),
+                                        column(width=3,
+                                               div(style = "font-size: 14px; margin-top: 10px; margin-bottom: 0;", 
+                                                   p("Low: < 0.1"), 
+                                                   p("Average: 0.1 - 0.3"), 
+                                                   p("High: > 0.3"),
+                                               ),
+                                        )
+                                    )
+                                )
                          )
-                   )
+                       ),
+                       hr(),
+                       div(style = "background-color: #f8f8f8; border: 1px solid #ddd; padding: 16px; border-radius: 5px;",
+                           h3("Discover Distributions", align="center"),
+                           p("The following section delves into visualizations of distributions. There are various graphical representations that can be used to portray distributions. In statistics, distributions refer to the frequency of possible values or outcomes occurring in a dataset.  In this regard, distributions can also be used to obtain valuable insights into the overall structure and characteristics of the network. The most common visualizations of distributions are histograms and boxplots, which are implemented below for inspection. There is a bit more flexibility here compared to previous visualizations. It means that can choose the centrality measure of interest, allowing you to gain a deeper understanding of its relevance in the provided network. Do not hesitate to refer to the statistical cheatsheet!"),
+                       ),
+                       hr(),
+                       div(
+                         p("When evaluating visualizations of distributions in the form of histograms and boxplots there are distinct key points of interest."),
+                         tags$ul(
+                           tags$li("Try to examine the shape and spread of the distribution. For example, a centrality measure of interest might exhibits a shape that is primarily right-skewed, with the bulk of the values situated on the left and a tail on the right. This often suggests that there the network is subject to a hierarchical differences between the actors in the network."),
+                           tags$li("Assess the shape and spread of the distribution. The shape serves as the  overview of the distributions. However, the shape is dictated by the ranges and scales presented in the visualization. The spread thus helps interpreting the distribution. Especially, both extremes of the x-axis, the minimum and maximum value, are interesting in this regard. "),
+                           tags$li("Lastly, these visualizations, in particular the boxplot, excel in highlighting outliers in the network. Outlying actor in this context represents those actors that exert significantly difference connectivity patterns compared to the majority of the actors. The boxplot visualizes the outliers with box dots."),
+                         ),
+                       ),
+                       fluidRow(column(width = 4,
+                                       h4("Histogram"),
+                                       p("The left-hand visualization represents a histogram. Histograms offer a comprehensive view of the distribution of node-level measures or centralities across the entire network. By visualizing the frequency of values within predefined bins, histograms enable you to identify the range, skewness, and outliers of the distribution."),
+                                       selectInput("centrality", "Choose the centrality measure of interest:",
+                                                   choices = c("Degree", "Betweenness", "Closeness", "Eccentricity"),
+                                                   selected = "Degree"),
+                       ),
+                       column(width = 8,
+                              h4("Boxplot"),
+                              div(
+                                p("Compared to a histogram, a boxplot is can be considerd more statistically-driven. Hence, the boxplot requires more explanation. It aims to visualize a summary of key statistical characteristics of the centrality measure distribution. The main components of the boxplot are:"),
+                                tags$ul(
+                                  tags$li(strong("The box: "),"This represents the middle 50% of the values proportion, known as the interquartile range (IQR). The bottom of the box is the 25th percentile (Q1) and the top is the 75th percentile (Q3). The line in the middle of the box is the median (Q2), which divides the data in half. The placement of the box indicates skewedness."),
+                                  tags$li(strong("The whiskers: ")," These lines extending from the box show the range of the data, up to 1.5 times the midspread. Any values beyond the whiskers are considered potential outliers."),
+                                  tags$li(strong("The outliers: "), "Any data points that fall outside the whiskers are plotted individually as outliers. These are values that are unusually high or low compared to the rest of the distribution."),
+                                ),
+                              ),
+                       ),
+                       ),
+                       fluidRow(
+                         column(width = 6, 
+                                plotOutput("DistPlot", width = "100%", height = "350px")
+                         ),
+                         column(width = 6, 
+                                plotOutput("BoxPlot", width = "100%", height = "350px")
+                         ),
+                         
+                       ),
+                       hr(),
+                       fluidRow(
+                         column(width = 4,
+                                div(style = "background-color: #f8f8f8; border: 1px solid #ddd; padding: 16px; border-radius: 5px;",
+                                    h3("Most Important Actors"),
+                                    p("One of the most insightful information about the network is are the most important actors. Importance in this context is subjective. For instance, one might find a popular actor with many connections the most important, whereas others define them as those actors that connect faculties. In other words, your definition of importance is dictated by your interest. This interest can be encapsulated by a centrality measure. In the following section, you can choose a centrality measure to base the most important actors on. Choose wisely! "),
+                                ),
+                                selectInput('ActorMetricD', 'What statistic should be used to determine the most important actors?', 
+                                            choices = c('Degree','Closeness','Betweenness'), selected = 'Degree'),
+                                numericInput('ActorNumD', 'How many actors should be retrieved?', 5, min = 1, max = NA)
+                         ),
+                         column(width = 8,
+                                DT::dataTableOutput("ActorTable")
+                         )
+                       )
+                )
               )
       ),
       tabItem(tabName = "cug_test",
@@ -421,7 +421,7 @@ server <- function(input, output, session) {
   
   # Define the sequence of tabs
   tabNames <- c("introduction", "data_upload", "dashboard", "cug_test", "community_detection", "network_comparison", "data_export")
-
+  
   # Function to navigate to the next tab
   observeEvent(input$nextTab, {
     currentTab <- which(tabNames == input$sidebar)
@@ -638,27 +638,27 @@ server <- function(input, output, session) {
   
   # Dashboard Network Plot
   output$networkPlot1 <- renderVisNetwork({
-      req(dataset())
-      g <- graph_from_data_frame(dataset(), directed = FALSE)
-      
-      # Set the color of the node
-      V(g)$color <- "#1bbbff"
-      
-      visNetwork::visIgraph(g) %>%
-        visIgraphLayout(layout = "layout_with_fr") %>%
-        visNodes(color = list(background = V(g)$color, border = "#2b2b2b", highlight = "#1F51FF"), 
-                 shadow = list(enabled = TRUE, size = 10, x = 0, y = 0)) %>%
-        visEdges(
-          # arrows = 'to',
-          color = list(color = "#cccccc", highlight = "#FF69B4"),
-          shadow = list(enabled = FALSE)
-        ) %>%
-        visOptions(highlightNearest = list(enabled = TRUE, degree = 1, hover = TRUE), 
-                   nodesIdSelection = list(enabled = TRUE, style = "width: 150px;")) %>%
-        visLayout(randomSeed = 123) %>%
-        visInteraction(navigationButtons = TRUE) %>%
-        visEdges(smooth = FALSE) 
-    }
+    req(dataset())
+    g <- graph_from_data_frame(dataset(), directed = FALSE)
+    
+    # Set the color of the node
+    V(g)$color <- "#1bbbff"
+    
+    visNetwork::visIgraph(g) %>%
+      visIgraphLayout(layout = "layout_with_fr") %>%
+      visNodes(color = list(background = V(g)$color, border = "#2b2b2b", highlight = "#1F51FF"), 
+               shadow = list(enabled = TRUE, size = 10, x = 0, y = 0)) %>%
+      visEdges(
+        # arrows = 'to',
+        color = list(color = "#cccccc", highlight = "#FF69B4"),
+        shadow = list(enabled = FALSE)
+      ) %>%
+      visOptions(highlightNearest = list(enabled = TRUE, degree = 1, hover = TRUE), 
+                 nodesIdSelection = list(enabled = TRUE, style = "width: 150px;")) %>%
+      visLayout(randomSeed = 123) %>%
+      visInteraction(navigationButtons = TRUE) %>%
+      visEdges(smooth = FALSE) 
+  }
   )
   
   # Graph Indices Count Plot
@@ -675,7 +675,7 @@ server <- function(input, output, session) {
       Category = c("Edge", "Vertex"),
       Counts = c(edge_count, vertex_count)
     )
-
+    
     ggplot(plot_df, aes(x = Counts, y = Category, fill = Category)) +
       geom_bar(stat = "identity") +
       scale_fill_manual(values = c("Edge" = "#1bbbff", "Vertex" = "#FF69B4"), name = "Category") +
@@ -714,7 +714,7 @@ server <- function(input, output, session) {
   #     coord_cartesian(xlim = c(0, 1)) + # Adjust x-axis limits
   #     coord_flip() # Flip the coordinates to make the bars vertical
   # })
-
+  
   # Graph Indices Distance Plot
   
   output$DistancePlot <- renderPlot({
@@ -756,7 +756,7 @@ server <- function(input, output, session) {
     g <- graph_from_data_frame(dataset(), directed = FALSE)
     return(round(igraph::graph.density(g), 3))
   })
-
+  
   # Graph Indices Centralization Plot
   
   output$CentralizationPlot <- renderPlot({
@@ -819,7 +819,7 @@ server <- function(input, output, session) {
       result = igraph::eccentricity(g, mode = 'all')
       binwidth = 0.1
     }
-
+    
     # Create a data frame containing the centrality measures
     centrality_df <- data.frame(Centrality = result)
     
