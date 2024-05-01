@@ -12,10 +12,10 @@ library(igraph)      # For network analysis (not explicitly used in provided sni
 library(visNetwork)
 library(ggplot2)
 library(english)
-source(paste0(dirname(rstudioapi::getSourceEditorContext()$path), '/Comparison_script.R'))
-#source('Comparison_script.R')
+library(shinyalert)
+#source(paste0(dirname(rstudioapi::getSourceEditorContext()$path), '/Comparison_script.R'))
+source('Comparison_script.R')
 
-# test pull
 
 # Setting the Hugging Face API key (ensure this is securely managed in production)
 Sys.setenv(HUGGINGFACE_API_KEY = "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")
@@ -26,23 +26,26 @@ ui <- dashboardPage(
   dashboardSidebar(
     sidebarMenu(id = "sidebar",
                 menuItem("Introduction", tabName = "introduction"),
-                menuItem("Data Import", tabName = "data_upload"),
-                menuItem("Network Dashboard", tabName = "dashboard"),
-                menuItem("Connection Importance", tabName = "cug_test"),
-                menuItem("Community Detection", tabName = "community_detection"),
-                menuItem("Network Comparison", tabName = 'network_comparison'),
-                menuItem("Data Export", tabName = "data_export")
+                menuItem("Upload Data", tabName = "data_upload"),
+                menuItem("Explore Network", tabName = "dashboard"),
+                menuItem("Critical Connections", tabName = "cug_test"),
+                menuItem("Find Communities", tabName = "community_detection"),
+                menuItem("Compare Networks", tabName = 'network_comparison'),
+                menuItem("Export Data", tabName = "data_export")
     )
   ),
   dashboardBody(
     tags$head(
       tags$style(HTML("
         .previous-button { position: fixed; top: 60px; left: 250px; z-index: 1050; }
+        .cheatsheet-button { position: fixed; top: 60px; right: 100px; z-index: 750; }
         .next-button { position: fixed; top: 60px; right: 20px; z-index: 100; }
+        .shinyalert-content { max-width: 600px; }
       "))
     ),
     uiOutput("prevButtonUI"),
     uiOutput("nextButtonUI"),
+    uiOutput("cheatsheetButtonUI"),
     tabItems(
       tabItem(tabName = "introduction",
               fluidRow(
@@ -50,7 +53,8 @@ ui <- dashboardPage(
                        wellPanel(
                          h1("Welcome!", align = "center"),
                          h3("Introduction:", align = "center"),
-                         p("Welcome to our interdisciplinary collaboration tutorial! This tutorial aims to provide researchers in the fields of digital design, marketing, and music with a user-friendly and non-technical introduction to understanding network data. By exploring the connections and dynamics within your research networks, we hope to empower you to enhance interdisciplinary collaboration and innovation within your respective domains.", style = "text-align: justify; padding: 20px;")
+                         p("Welcome to our interdisciplinary collaboration tutorial! This tutorial aims to provide researchers in the fields of digital design, marketing, and music with a user-friendly and non-technical introduction to understanding network data. By exploring the connections and dynamics within your research networks, we hope to empower you to enhance interdisciplinary collaboration and innovation within your respective domains.", style = "text-align: justify; padding: 20px;"),
+                         p("You can access a comprehensive statistical cheatsheet by simply clicking on the button provided.", style = "text-align: justify; padding: 20px;")
                        )
                 )
               )
@@ -58,7 +62,7 @@ ui <- dashboardPage(
       tabItem(tabName = "data_upload",
               fluidRow(
                 column(width = 12,
-                       h3("Data Import Page", align = "center"),
+                       h3("Data Upload Page", align = "center"),
                        fileInput('file1', 'Choose CSV/Excel File', accept = c('.csv', '.xlsx', '.xls')),
                        DT::dataTableOutput("dataTable")  # Renders the uploaded data table
                 )
@@ -71,7 +75,7 @@ ui <- dashboardPage(
                            h3("Network Dashboard", align = "center"),
                            p("Now that a network has been imported, it is time to get a better understanding of its characteristics. The current page allows for a quick and comprehensive overview of your network through a variety of statistics, findings, and visualizations. The dashboard is designed to empower the laymen that have access to network data. Getting a better understanding of the network starts with a visual inspection of its structure. Therefore, the network is displayed in the interactive visualization below.")
                        ),
-                       visNetworkOutput("networkPlot1", height = "350px"),
+                       withSpinner(visNetworkOutput("networkPlot1", height = "350px"), type = 4),
                        p("Although visualizing the network serves as a useful method to obtain a holistic view of the network's structure and connections, it only scratches the surface of what can be discovered. Through further exploration with statistical measures and thus representing network characteristics as numbers, we can extract meaningful patterns, trends, and relationships that may not be immediately apparent from the visualization alone. These insights can help us better understand the underlying dynamics of the network, identify key nodes or clusters, detect anomalies or trends over time, and make informed decisions to optimize network performance or address specific challenges. Explanations of the network statistics are defined in the statistical cheatsheet."),
                        fluidRow(
                          column(width = 4, 
@@ -81,7 +85,7 @@ ui <- dashboardPage(
                          #        plotOutput("ScorePlot", width = "100%", height = "300px")
                          #        ),
                          column(width = 4, 
-                                plotOutput("DistancePlot", width = "100%", height = "300px")
+                                withSpinner(plotOutput("DistancePlot", width = "100%", height = "300px"), type = 4)
                          ),
                          column(width = 4,
                                 plotOutput("CentralizationPlot", width = "100%", height = "300px"))
@@ -165,7 +169,7 @@ ui <- dashboardPage(
                        ),
                        fluidRow(
                          column(width = 6, 
-                                plotOutput("DistPlot", width = "100%", height = "350px")
+                                withSpinner(plotOutput("DistPlot", width = "100%", height = "350px"), type = 4)
                          ),
                          column(width = 6, 
                                 plotOutput("BoxPlot", width = "100%", height = "350px")
@@ -184,11 +188,12 @@ ui <- dashboardPage(
                                 numericInput('ActorNumD', 'How many actors should be retrieved?', 5, min = 1, max = NA)
                          ),
                          column(width = 8,
-                                DT::dataTableOutput("ActorTable")
+                                withSpinner(DT::dataTableOutput("ActorTable"), type = 4)
                          )
                        )
                 )
               )
+
       ),
       tabItem(tabName = "cug_test",
               fluidPage(
@@ -199,7 +204,7 @@ ui <- dashboardPage(
                   p("Imagine you have a big group of researchers and stakeholders from different fields. By using the Conditional Uniform Graph (CUG) test, you can figure out where there might be gaps in communication or places where people aren't working together as well as they could be. This helps to create better networks between researchers and stakeholders, which leads to more innovative ideas and better understanding of how generative AI can impact different industries."),
                   actionButton("runCUG", "Run CUG Test"),
                   h4("CUG Test Results"),
-                  verbatimTextOutput("cugTestOutput"),
+                  withSpinner(verbatimTextOutput("cugTestOutput"), type = 4),
                   h4("Hugging Face Explanation"),
                   p("Univariate Conditional Uniform Graph Test: This means we're looking at how important individual connections are in the network."),
                   p("Conditioning Method: This tells us what part of the network we're focusing on. In this case, we're looking specifically at the connections between different nodes (researchers) in the network."),
@@ -219,10 +224,10 @@ ui <- dashboardPage(
                 div(
                   p("In order to detect the communities present in your network you can make use of several different algorithms. To help you selecting the most appropriate one we have included a brief explanation of each. Here is the run-down:"),
                   tags$ul(
-                    tags$li(strong("Fast Greedy: "), "this algorithm is like organizing a set of objects into clusters based on how closely they are related. Imagine you have a bunch of items that need to be grouped by similarity; the Fast Greedy method starts by considering each item in its own group. It then combines these groups step by step, each time choosing the combination that results in the most cohesive groups, until no further improvement is possible. This approach is fast and efficient, making it suitable for quickly finding a good grouping in large datasets where each item has many connections."),
-                    tags$li(strong("Louvain: "), "this algorithm is akin to sorting a large collection into subsets where each subset contains items that are more similar to each other than to items in other subsets. It begins with each item in its own subset and iteratively merges these subsets to maximize \"modularity,\" a measure of how well the collection is divided. The process continues until the modularity cannot be increased further, indicating that the items are grouped in an optimal way. This method is known for its ability to handle very large collections, quickly identifying an optimal division."),
-                    tags$li(strong("Girvan-Newman: "), "this algorithm focuses on identifying the connections that are most critical for maintaining the overall structure of the network. It works by progressively removing these connections, which are identified through measures like \"betweenness\" (a measure of how often a connection lies on the shortest path between pairs of items). This process gradually separates the network into distinct groups based on the connectivity between items. Although thorough, this method can be slower than others, especially for networks with a large number of items or connections."),
-                    tags$li(strong("Walktrap: "), "this algorithm is inspired by the idea of random walks within a network to discover groups of closely related items. It posits that short random walks are likely to stay within the same group because the items within a group are more densely interconnected. By analyzing the paths taken during these walks, Walktrap identifies which items tend to cluster together. This approach is effective for revealing the natural grouping within networks based on the connectivity and density of the connections between items.")
+                    tags$li(strong("Fast Greedy: "), "this algorithm quickly groups together researchers based on their collaboration patterns. Imagine you have a large group of researchers from different fields. Fast Greedy starts by considering each researcher separately and then combines them into clusters, choosing combinations that create the most cohesive groups. For example, if researchers want to foster interdisciplinary collaborations within the organization, they can use Fast Greedy to efficiently identify and capitalize on the existing but perhaps hidden collaborative ties and complementary strengths within their research community."),
+                    tags$li(strong("Louvain: "), "this algorithm sorts researchers into subsets where each subset contains researchers who collaborate more closely with each other than with researchers in other subsets. It starts by placing each researcher in their own subset and then merges them to maximize how well the researchers are divided (i.e., their modularity). This method is great for handling large datasets and quickly finding an optimal division. For instance, if the organization wants to identify groups of researchers with similar research interests or methodologies, they can use Louvain to efficiently categorize them into clusters."),
+                    tags$li(strong("Girvan-Newman: "), "this algorithm focuses on identifying critical connections between research communities within the organization. It gradually separates the network into distinct groups by removing connections that are important for maintaining the overall structure of collaboration (using measures like betweenness: how often a connection lies on the shortest path between pairs of items). For example, if the organization wants to analyze collaboration networks among academic departments or research teams, Girvan-Newman can help identify key connections that bridge different research fields or groups."),
+                    tags$li(strong("Walktrap:"), "this algorithm is inspired by the idea of random walks within a network, Walktrap discovers groups of closely connected researchers. It identifies clusters based on the strength and density of collaborations between researchers (it uses the length and frequency of random walks within groups). For example, if the organization wants to explore natural groupings within their research collaboration network, Walktrap can help identify clusters of researchers with strong interconnections, facilitating the discovery of new interdisciplinary research opportunities.")
                   ),
                 ),
                 selectInput("algorithm", "Choose a Community Detection Algorithm:",
@@ -262,23 +267,13 @@ ui <- dashboardPage(
       ),
       tabItem(tabName = 'network_comparison',
               fluidPage(
-                h3("Network Comparison Page", align = "center"),
+                h3("Network comaprison Page", align = "center"),
                 p('This tab will be focused on the comparison of two different networks, thus, please Upload a second network to compare to'),
                 fileInput('file2', 'Choose CSV/Excel File', accept = c('.csv', '.xlsx', '.xls')),
                 DT::dataTableOutput("dataTable2"),  # Renders the uploaded data table
-                h4('Correlation in the ties between the networks'),
-                p('In this part of the analysis a QAP methodology will be used to compare the correlation between two selected networks.\nThe QAP methodology is introduced to make sure that each of the observations do no longer have the dependent property which is normally the case when working with network data.\nIn short the QAP uses a simulation of the network to be able to see what would happen to the observations would they have been independent of each other. From these observations, the QAP can generate a probability density function, which can be used to generate the probabilities of a certain observation.\nUsing the table below as an exmaple, the ones represent that there is a tie between a pair of nodes and a 0 representing that there is not, which represents the network next to it.'),
-                fluidRow(
-                  column(width = 6,
-                         tableOutput('QAPtable1')),
-                  column(width = 6, 
-                         plotOutput('QAPNet'))),
-                p('After the network is established like in the example, the vertices get ordered randomly, so in our example it can for instance be 6,3,1,4,2,5. Than we get the following table'),
-                tableOutput('QAPtable2'), 
-                p('Finally we use this randomised network to calculate the correlation with the other non-randomised network. This correlation value is the value for a singular value. After this is repeated for a set number of times, onne could get a good idea of the distributions of the underlying statistics, which could finally be used to determine whether there is any statistical significance or not'),
-                tags$head(tags$style(HTML("#QAPtable2 table {background-color: white; color = black; border: 1px solid black} .table>tbody>tr>td, .table>tbody>tr>th, .table>tfoot>tr>td, .table>tfoot>tr>th, .table>thead>tr>td, .table>thead>tr>th {border: 1px solid black} .my_table_aa01 th {text-align: center !important;}", media="screen", type="text/css"))),
-                tags$head(tags$style(HTML("#QAPtable1 table {background-color: white; color = black; border: 1px solid black} .table>tbody>tr>td, .table>tbody>tr>th, .table>tfoot>tr>td, .table>tfoot>tr>th, .table>thead>tr>td, .table>thead>tr>th {border: 1px solid black} .my_table_aa01 th {text-align: center !important;}", media="screen", type="text/css"))),
-                p('Therefore, the number of repetitions which are done in the simulation is a very important metric, as this determines how many times the network is randomised and thus how good the obtained probability density function represents the actual situation. Therefore, ideally the QAP model would run very often to get the best approximation possible. However, this comes with a trade-off in the time it takes before the model is completed, which is highly dependent on the size and complexity of each network. Thus, the exact optimal value differs for each network. Therefore, it is advised to start with a lower number, like 100, and build up slowly such that the best balance between execution time and accuracy can be found.'),
+                h4('Correlation between the networks'),
+                p('The correlation between both networks will be computed using the QAP method, as explained in the Cheatsheet.'),
+                p('Therefore, the number of repetitions of scrambled networks which are done in the simulation is a very important metric, as this determines how good the results represent the actual situation. These repetitions come with a trade-off in the time it takes before the model is completed, which is highly dependent on the size and complexity of each network. Thus, the exact optimal value differs for each network. Therefore, it is advised to start with a lower number, like 100, and build up slowly such that the best balance between execution time and accuracy can be found.'),
                 numericInput('QAPreps', 'Number of repetitions:', 100, min = 10, max = 10000),
                 actionButton('QAPAnalysis', 'Run Analysis'), 
                 HTML('<h5><b>Output:</b></h5>'),
@@ -417,6 +412,337 @@ server <- function(input, output, session) {
     if (!is.null(input$sidebar) && input$sidebar != "data_export") {  # Exclude on the last tab
       actionButton("nextTab", "Next", class = "next-button btn btn-primary")
     }
+  })
+  
+  # Dynamically render the "Previous" button
+  output$cheatsheetButtonUI <- renderUI({
+    actionButton("cheatsheet", "Cheatsheet", class = "cheatsheet-button btn btn-primary")
+  })
+  
+  # Function to navigate to the next tab
+  observeEvent(input$cheatsheet, {
+    shinyalert(
+      title = "Statistical Cheatsheet",
+      text = 
+        "<div style='text-align: left;'>
+          <h3>General Statistical Terms</h3>
+          <p><b>Metrics / Measures:</b> Quantitative measures used to describe characteristics of data, such as averages, variability, and relationships.</p>
+          <p><b>Distributions:</b> Patterns showing how data is spread out, like bell curves or uneven distributions.</p>
+          <p><b>Skewedness:</b> A way to describe the shape of the data distribution, indicating whether it's asymmetrical or balanced.</p>
+          <p><b>Outliers:</b> Unusual data points that stand apart from the rest, potentially indicating errors or unique cases.</p>
+          <p><b>Median:</b> The middle value in a dataset when arranged in ascending order, separating the higher and lower halves.</p>
+          <p><b>Mode:</b> The most frequent value in a dataset, representing the data point that occurs most often.</p>
+          <p><b>Minimum and Maximum:</b> The smallest and largest values in a dataset, respectively, defining the range of possible values.</p>
+          <p><b>Quantile:</b> A value that divides a dataset into equal-sized intervals. For example, the median is the quantile that divides the data into two equal halves.</p>
+          <p><b>Quartile:</b> Three values that divide a dataset into four equal parts. The first quartile (Q1) is the value below which 25% of the data falls, the second quartile (Q2) is the median, and the third quartile (Q3) is the value below which 75% of the data falls.</p>
+          <p><b>Percentile:</b> A value that indicates the percentage of data points that are less than or equal to it. For example, the 75th percentile (Q3) is the value below which 75% of the data falls.</p>
+          <p><b>Interquartile Range (IQR):</b> A measure of statistical dispersion, calculated as the difference between the third quartile (Q3) and the first quartile (Q1). It represents the spread of the middle 50% of the data.</p>
+          <p><b>Infinite Values:</b> Infinite values are values that are infinitely large or small, often indicating outliers or extreme values
+          
+          <h3>Hypothesis Testing</h3>
+          <p><b>Null Hypothesis (H0) & Alternative Hypothesis (H1):</b> In a statistical test, the null hypothesis is a statement that there is no effect or relationship, while the alternative hypothesis is the statement we want to find evidence for. For example, in a drug trial, the null hypothesis might be that the drug has no effect, while the alternative hypothesis is that the drug does have an effect.</p>
+          <p><b>P-value:</b> The p-value is a measure of the strength of evidence against the null hypothesis. It tells us the probability of observing the data or something more extreme if the null hypothesis is true. A smaller p-value indicates stronger evidence against the null hypothesis.</p>
+          <p><b>Significance Level:</b> The significance level, often denoted as α (alpha), is the threshold used to determine statistical significance. Commonly used significance levels include 0.05 and 0.01, corresponding to a 5% and 1% chance, respectively, of incorrectly rejecting the null hypothesis.</p>
+        
+          <h3>Network Terms</h3>
+          <p><b>Nodes / Vertices:</b> Individual entities or points in a network, such as people in a social network or routers in a computer network.</p>
+          <p><b>Edges:</b> Connections or links between nodes in a network, representing relationships, interactions, or flows.</p>
+        
+          <h3>Distance Terms</h3>
+          <p><b>Radius:</b> The maximum distance from a central point to any point within a network or dataset, indicating its extent or reach.</p>
+          <p><b>Mean Distance:</b> The average distance between all pairs of nodes in a network, showing the typical separation between nodes.</p>
+          <p><b>Absolute Distance:</b> The distance between two nodes without considering direction or sign, measuring only the magnitude of the difference.</p>
+          <p><b>Diameter:</b> The longest shortest path between any pair of nodes in a network, representing the maximum distance between nodes.</p>
+      
+          <h3>Network Metrics</h3>
+          <p><b>Density:</b> Density measures how connected a network is, representing the proportion of actual connections to possible connections.</p>
+          <p><b>Transitivity:</b> Transitivity, or clustering coefficient, measures the likelihood that two nodes connected to the same node are also connected to each other.</p>
+          
+          <h3>Centrality Measures</h3>
+          <p><b>Betweenness Centrality:</b> Betweenness centrality measures the extent to which a node lies on the shortest paths between other nodes in the network.</p>
+          <p><b>Closeness Centrality:</b> Closeness centrality measures how close a node is to all other nodes in the network, based on the length of its shortest paths to all other nodes.</p>
+          <p><b>Degree Centrality:</b> Degree centrality measures the number of connections a node has in the network.</p>
+          <p><b>Eigenvector Centrality:</b> Eigenvector centrality measures the importance of a node in the network, considering both the node's connections and the connections of its neighbors.</p>
+        
+          <h3>Community Detection</h3>
+          <p><b>Communities:</b> Communities are groups of nodes in a network that are more densely connected to each other than to nodes outside the group.</p>
+          <p><b>Modularity Score:</b> Modularity is a measure of the quality of the division of a network into communities, with higher values indicating a better division.</p>
+          <p><b>Community Detection Algorithms:</b> Fast greedy, Louvain, Girvan-Newman, and Walktrap are algorithms used to detect communities in networks based on different criteria and approaches.</p>
+          <ul>
+            <li><strong>Fast Greedy:</strong>
+              <ul>
+                <li>This algorithm is like organizing a set of objects into clusters based on how closely they are related. Imagine you have a bunch of items that need to be grouped by similarity; the Fast Greedy method starts by considering each item in its own group. It then combines these groups step by step, each time choosing the combination that results in the most cohesive groups, until no further improvement is possible. This approach is fast and efficient, making it suitable for quickly finding a good grouping in large datasets where each item has many connections.</li>
+              </ul>
+            </li>
+            <li><strong>Louvain:</strong>
+              <ul>
+                <li>This algorithm is akin to sorting a large collection into subsets where each subset contains items that are more similar to each other than to items in other subsets. It begins with each item in its own subset and iteratively merges these subsets to maximize 'modularity,' a measure of how well the collection is divided. The process continues until the modularity cannot be increased further, indicating that the items are grouped in an optimal way. This method is known for its ability to handle very large collections, quickly identifying an optimal division.</li>
+              </ul>
+            </li>
+            <li><strong>Girvan-Newman:</strong>
+              <ul>
+                <li>This algorithm focuses on identifying the connections that are most critical for maintaining the overall structure of the network. It works by progressively removing these connections, which are identified through measures like 'betweenness' (a measure of how often a connection lies on the shortest path between pairs of items). This process gradually separates the network into distinct groups based on the connectivity between items. Although thorough, this method can be slower than others, especially for networks with a large number of items or connections.</li>
+              </ul>
+            </li>
+            <li><strong>Walktrap:</strong>
+              <ul>
+                <li>This algorithm is inspired by the idea of random walks within a network to discover groups of closely related items. It posits that short random walks are likely to stay within the same group because the items within a group are more densely interconnected. By analyzing the paths taken during these walks, Walktrap identifies which items tend to cluster together. This approach is effective for revealing the natural grouping within networks based on the connectivity and density of the connections between items.</li>
+              </ul>
+            </li>
+          </ul>
+          <p><b>Local Bridges:</b> Local bridges are connections between nodes that bridge different communities in the network, facilitating communication between them.</p>
+          
+          <h3>Conditional Uniform Graph (CUG) Test</h3>
+          <p><b>CUG Test:</b> The CUG test evaluates the importance of connections in a network, identifying critical connections that bridge different parts of the network.</p>
+        
+          <h3>QAP Test</h3>
+          <p><b>QAP Test:</b> The QAP test compares a chosen network statistic between two different networks while controlling for dependencies among observations, helping to assess the similarity or difference between networks.</p>
+          <p>Using the following two networks, the inner workings of the QAP test will be explained</p>
+          <p> &nbsp; </p>
+          <figure class='half'>
+            <table>
+              <tr>
+                <td>
+                  <p> The following network will be referenced by <i>Network 1</i>: &emsp;</p>
+                  <img src='https://i.imgur.com/tT8eij5.png', width = '50%'>
+                </td>
+                <td>
+                  <p> The following network will be referenced by <i>Network 2</i>: &emsp; </p>
+                  <img src='https://i.imgur.com/sSS8wJ3.png', width = '50%'>
+                </td>
+              </tr>
+            </table>
+          </figure>
+          <p> &nbsp; </p>
+          <p> To be able to better show the workings, the networks need to be transferred to <b> Adjacency matrices</b>. These are tables which have <i>n</i> rows and <i>n</i> columns, where each row represents a node and and each column a node and <i>n</i> is therefore equal to the number of nodes in a network. The values of the table change from 0 to 1 based whether there is a connection between the node indicated by the row and the node indicated by the column. Thus, for instance, in network 1, the first row and 6th column will have a value of 1, due to the connection between nodes 1 and 6. Transfroming both of the example networks to these matrices, they will become:</p>
+          <p> &nbsp; </p>
+          <table>
+            <tr>
+              <td>
+                <p> <b> Network 1: </b> </p>
+                <table border='2' bgcolor = '#FFFFFF'>
+                  <tr> 
+                    <th></th>
+                    <th>&ensp;Node 1&ensp;</th>
+                    <th>&ensp;Node 2&ensp;</th>
+                    <th>&ensp;Node 3&ensp;</th>
+                    <th>&ensp;Node 4&ensp;</th>
+                    <th>&ensp;Node 5&ensp;</th>
+                    <th>&ensp;Node 6&ensp;</th>
+                  </tr>
+                  <tr>
+                    <th>&ensp;Node 1&ensp;</th>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                  </tr>
+                  <tr>
+                    <th>&ensp;Node 2&ensp;</th>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                  </tr>
+                  <tr>
+                    <th>&ensp;Node 3&ensp;</th>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                  </tr>
+                  <tr>
+                    <th>&ensp;Node 4&ensp;</th>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                  </tr>
+                  <tr>
+                    <th>&ensp;Node 5&ensp;</th>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                  </tr>
+                  <tr>
+                    <th>&ensp;Node 6&ensp;</th>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+              <p> &emsp;</p>
+              </td>
+              <td>
+                <p> <b> Network 2: </b> </p>
+                <table border='2'>
+                  <tr> 
+                    <th></th>
+                    <th>&ensp;Node 1&ensp;</th>
+                    <th>&ensp;Node 2&ensp;</th>
+                    <th>&ensp;Node 3&ensp;</th>
+                    <th>&ensp;Node 4&ensp;</th>
+                    <th>&ensp;Node 5&ensp;</th>
+                    <th>&ensp;Node 6&ensp;</th>
+                  </tr>
+                  <tr>
+                    <th>&ensp;Node 1&ensp;</th>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                  </tr>
+                  <tr>
+                    <th>&ensp;Node 2&ensp;</th>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                  </tr>
+                  <tr>
+                    <th>&ensp;Node 3&ensp;</th>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                  </tr>
+                  <tr>
+                    <th>&ensp;Node 4&ensp;</th>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                  </tr>
+                  <tr>
+                    <th>&ensp;Node 5&ensp;</th>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                  </tr>
+                  <tr>
+                    <th>&ensp;Node 6&ensp;</th>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+          <p> &nbsp; </p>
+          <p> These tables will then be used in the process of the QAP model. The QAP essentially scrambles the first table over and over again. These scrambles are done by randomly altering the order of the nodes, which will be reflected accordingly in both the row and the column of the table. Thus, if the order after the scramble would be 4-1-3-5-2-6, than the table of <i>Network 1</i> would look the following: </p> 
+          <p> &nbsp; </p>
+          <p> <b> Network 1: </b> </p>
+                <table border='2' bgcolor = '#FFFFFF'>
+                  <tr> 
+                    <th></th>
+                    <th>&ensp;Node 4&ensp;</th>
+                    <th>&ensp;Node 1&ensp;</th>
+                    <th>&ensp;Node 3&ensp;</th>
+                    <th>&ensp;Node 5&ensp;</th>
+                    <th>&ensp;Node 2&ensp;</th>
+                    <th>&ensp;Node 6&ensp;</th>
+                  </tr>
+                  <tr>
+                    <th>&ensp;Node 4&ensp;</th>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                  </tr>
+                  <tr>
+                    <th>&ensp;Node 1&ensp;</th>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                  </tr>
+                  <tr>
+                    <th>&ensp;Node 3&ensp;</th>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                  </tr>
+                  <tr>
+                    <th>&ensp;Node 5&ensp;</th>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                  </tr>
+                  <tr>
+                    <th>&ensp;Node 2&ensp;</th>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                  </tr>
+                  <tr>
+                    <th>&ensp;Node 6&ensp;</th>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;1&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                    <td>&emsp;&ensp;&nbsp;0&nbsp;&emsp;</td>
+                  </tr>
+               </table>
+            <p> &nbsp; </p>
+            <p> Using this now scrambled table the algorithm will compute the correlation<sup>1</sup> between the scrambled network and the unscrambled second network, after which the value is saved and the scrambing and calculation is repeated many times (often 1000 times or higher, but it depends on the calculation time). Using all the obtained values, it can be calculated how 'special' the original value between the two networks is by comparing how many of the random observations are smaller than the actual value and how many of the random observations are larger than the actual value. Depending on the hypothesis which is being tested, the <b>p-value</b> will either of these two values:</p>
+            <p> &nbsp; </p>
+            <ul>
+              <li> If we want to test whether the observed correlation is <b>significantly bigger</b> than the random networks, we will use the proportion of random observations which were <b>smaller</b> than the actual statistic as the p-value </li>
+              <li> If we want to test whether the observed correlation is <b>significantly smaller</b> than the random networks, we will use the proportion of random observations which were <b>bigger</b> than the actual statistic as the p-value</li>
+            </ul>
+            <p> &nbsp; </p>
+            <p> Using the according p-value, it can then be calculated whether the observed statistic is significant or not </p>
+            <p> &nbsp; </p>
+            <p> <sup>1</sup> The formula for the correlation is out of the scope of this tutorial, but more informtion on it can be found <a href = https://www.michelecoscia.com/wp-content/uploads/2021/10/nvd_corr.pdf> in this paper </a>.</p>
+        </div>",
+    size = "l",
+      html = TRUE
+    )
   })
   
   # Define the sequence of tabs
@@ -689,32 +1015,7 @@ server <- function(input, output, session) {
     
   })
   
-  # # Graph Indices Score Plot
-  # output$ScorePlot <- renderPlot({
-  #   req(dataset())
-  #   g <- graph_from_data_frame(dataset(), directed = FALSE)
-  #   density <- igraph::edge_density(g)
-  #   transitivity <- igraph::transitivity(g)
-  #   
-  #   plot_df <- data.frame(
-  #     Category = c("Density", "Transitivity"),
-  #     Scores = c(density, transitivity)
-  #   )
-  #   
-  #   ggplot(plot_df, aes(x = Scores, y = Category, fill = Category)) +
-  #     geom_bar(stat = "identity") +
-  #     scale_fill_manual(values = c("Density" = "#1bbbff", "Transitivity" = "#FF69B4"), name = "Category") +
-  #     labs(x = "Score", y = "Category", title = "Horizontal Bar Chart - Scores") +
-  #     theme_minimal() +
-  #     theme(
-  #       legend.position = "top",
-  #       plot.title = element_text(hjust = 0.5), # Center the plot title
-  #       plot.margin = margin(10, 30, 10, 10) # Adjust plot margins
-  #     ) +
-  #     coord_cartesian(xlim = c(0, 1)) + # Adjust x-axis limits
-  #     coord_flip() # Flip the coordinates to make the bars vertical
-  # })
-  
+
   # Graph Indices Distance Plot
   
   output$DistancePlot <- renderPlot({
@@ -757,6 +1058,7 @@ server <- function(input, output, session) {
     return(round(igraph::graph.density(g), 3))
   })
   
+
   # Graph Indices Centralization Plot
   
   output$CentralizationPlot <- renderPlot({
@@ -784,7 +1086,7 @@ server <- function(input, output, session) {
                                    "Eigenvector" = "#1F51FF"
       ), 
       name = "Category") +
-      labs(x = "Centralization", y = "Category", title = "Vertical Bar Chart - Centralization") +
+      labs(x = "Centralization", y = "Category", title = "Horizontal Bar Chart - Centralization") +
       theme_minimal() +
       theme(
         legend.position = "top",
@@ -869,26 +1171,6 @@ server <- function(input, output, session) {
         plot.title = element_text(hjust = 0.5), # Center the plot title
       )
   })
-  
-  # Retrieve the table showing the most important actors
-  output$ActorTable = DT::renderDataTable({
-    req(dataset())
-    req(input$ActorMetricD)
-    req(input$ActorNumD)
-    g <- graph_from_data_frame(dataset(), directed = FALSE)
-    find_important_actors(g, metric = input$ActorMetricD, n_actors = input$ActorNumD)
-  })
-  
-  # # Membership Output
-  # output$membershipOutput <- DT::renderDataTable({
-  #   req(analysisResult())
-  #   if (!is.null(analysisResult()$error)) {
-  #     return(data.frame(Error = analysisResult()$error))
-  #   } else {
-  #     memberships <- community_memberships()
-  #     data.frame(Node = names(memberships), Community = memberships)
-  #   }
-  # })
   
   explanationOutput <- eventReactive(input$runAnalysis, {
     req(analysisResult())
@@ -1061,7 +1343,7 @@ server <- function(input, output, session) {
     }
   }, ignoreInit = T)
   
-  # Plot the density plot showing the betweenness in both networks
+  # Plot the denisty plot showing the betweenness in both networks
   output$betweenness_plot = renderPlot({
     req(betweenness_plot())
     print(betweenness_plot())
