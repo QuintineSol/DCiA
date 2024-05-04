@@ -441,7 +441,7 @@ server <- function(input, output, session) {
           
           <h3>Hypothesis Testing</h3>
           <p><b>Null Hypothesis (H0) & Alternative Hypothesis (H1):</b> In a statistical test, the null hypothesis is a statement that there is no effect or relationship, while the alternative hypothesis is the statement we want to find evidence for. For example, in a drug trial, the null hypothesis might be that the drug has no effect, while the alternative hypothesis is that the drug does have an effect.</p>
-          <p><b>P-value:</b> The p-value is a measure of the strength of evidence against the null hypothesis. It tells us the probability of observing the data or something more extreme if the null hypothesis is true. A smaller p-value indicates stronger evidence against the null hypothesis.</p>
+          <p><b>P-value:</b> The p-value is the probability of observing the data or something more extreme if the null hypothesis is true. A smaller p-value indicates stronger evidence against the null hypothesis.</p>
           <p><b>Significance Level:</b> The significance level, often denoted as α (alpha), is the threshold used to determine statistical significance. Commonly used significance levels include 0.05 and 0.01, corresponding to a 5% and 1% chance, respectively, of incorrectly rejecting the null hypothesis.</p>
         
           <h3>Network Terms</h3>
