@@ -1520,11 +1520,11 @@ server <- function(input, output, session) {
   
   output$errorMessage <- renderText({
     if (is.null(network_object()) && is.null(community_memberships())) {
-      return("Error: No network and communities available. Please return to the 'Community Detection' tab.")
+      return("Error: No network and communities available. Please return to the 'Find Communities' tab.")
     } else if (is.null(network_object())) {
-      return("Error: No network available. Please return to the 'Community Detection' tab.")
+      return("Error: No network available. Please return to the 'Find Communities' tab.")
     } else if (is.null(community_memberships())) {
-      return("Error: No communities available. Please return to the 'Community Detection' tab.")
+      return("Error: No communities available. Please return to the 'Find Communities' tab.")
     } else {
       return(NULL)
     }
