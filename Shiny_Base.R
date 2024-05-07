@@ -13,8 +13,8 @@ library(visNetwork)
 library(ggplot2)
 library(english)
 library(shinyalert)
-source(paste0(dirname(rstudioapi::getSourceEditorContext()$path), '/Comparison_script.R'))
-#source('Comparison_script.R')
+#source(paste0(dirname(rstudioapi::getSourceEditorContext()$path), '/Comparison_script.R'))
+source('Comparison_script.R')
 
 
 # Setting the Hugging Face API key (ensure this is securely managed in production)
@@ -109,7 +109,9 @@ ui <- dashboardPage(
                                                    p(style = "margin-right: 10px;", "Average: 0.2 - 0.4"),
                                                    p("High: > 0.4"),
                                                ),
-                                        )
+                                        ),
+                                        column(width= 12,
+                                               tags$img(src='https://i.imgur.com/tT8eij5.png', width = '100%'))
                                     )
                                 )
                          ),
@@ -129,10 +131,13 @@ ui <- dashboardPage(
                                                    p(style = "margin-right: 10px;", "Average: 0.1 - 0.3"),
                                                    p("High: > 0.3"),
                                                ),
-                                        )
+                                        ),
+                                        column(width= 12,
+                                        tags$img(src='https://i.imgur.com/tT8eij5.png', width = '100%'))
                                     )
                                 )
-                         )
+                         ),
+                                
                        
                        ),
                        hr(),
