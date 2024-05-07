@@ -5,7 +5,7 @@ account: apollo-dashboard
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 11653835
-bundleId: 8588182
+bundleId: 8588203
 url: https://apollo-dashboard.shinyapps.io/DCiA/
 version: 1
 asMultiple: FALSE

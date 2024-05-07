@@ -111,7 +111,7 @@ ui <- dashboardPage(
                                                ),
                                         ),
                                         column(width= 12,
-                                               tags$img(src='https://i.imgur.com/tT8eij5.png', width = '100%'))
+                                               tags$img(src='https://i.imgur.com/Pb2x05v.jpeg', width = '100%'))
                                     )
                                 )
                          ),
@@ -133,7 +133,7 @@ ui <- dashboardPage(
                                                ),
                                         ),
                                         column(width= 12,
-                                        tags$img(src='https://i.imgur.com/tT8eij5.png', width = '100%'))
+                                        tags$img(src='https://i.imgur.com/4D5HTL5.jpeg', width = '100%'))
                                     )
                                 )
                          ),
