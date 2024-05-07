@@ -5,9 +5,9 @@ account: apollo-dashboard
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 11653835
-bundleId: 8588203
+bundleId: 8588849
 url: https://apollo-dashboard.shinyapps.io/DCiA/
 version: 1
 asMultiple: FALSE
 asStatic: FALSE
-ignoredFiles: .RData|Commmunity detection.R|cug_tests.R|data loader.R|Descriptive reports.R|README.md|snaG7_0.1.0.tar.gz|Visualising script.R|visualize_intervention_ui.R|Data|images
+ignoredFiles: .RData|Commmunity detection.R|cug_tests.R|data loader.R|Descriptive reports.R|README.md|snaG7_0.1.0.tar.gz|Visualising script.R|visualize_intervention_ui.R|Data
