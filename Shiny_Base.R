@@ -22,7 +22,14 @@ Sys.setenv(HUGGINGFACE_API_KEY = "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")
 
 # Define the User Interface
 ui <- dashboardPage(
-  dashboardHeader(title = "Apollo"),
+  dashboardHeader(
+    title = div(
+      style = "display: flex; align-items: center; max-width: 230px; padding-right: 10px;",
+      img(src = "workhorse.png", height = "30px", style = "margin-right: 5px; flex-shrink: 0;"),
+      tags$span("NetWORKHORSE", style = "font-size: 16px; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;")
+    ),
+    titleWidth = 250
+  ),
   dashboardSidebar(
     sidebarMenu(id = "sidebar",
                 menuItem("Introduction", tabName = "introduction"),
@@ -35,27 +42,100 @@ ui <- dashboardPage(
     )
   ),
   dashboardBody(
-    tags$head(
-      tags$style(HTML("
-        .previous-button { position: fixed; top: 60px; left: 250px; z-index: 1050; }
-        .cheatsheet-button { position: fixed; top: 60px; right: 100px; z-index: 750; }
-        .next-button { position: fixed; top: 60px; right: 20px; z-index: 100; }
-        .shinyalert-content { max-width: 600px; }
-      "))
-    ),
+    tags$head(tags$style(HTML("
+      .skin-blue .main-header .logo {
+        //background-color: #1E90FF;
+        //color: #FFFFFF;
+        font-size: 20px;
+        font-weight: bold;
+      }
+      .skin-blue .main-header .navbar {
+        //background-color: #1E90FF;
+      }
+      .previous-button { 
+        position: fixed; 
+        top: 55px; 
+        z-index: 1050; 
+      }
+      .cheatsheet-button, .next-button { 
+        position: fixed; 
+        top: 55px;
+        z-index: 1050; 
+      }
+      previous-button {
+        left: 250px;
+      }  
+      .cheatsheet-button {
+        right: 80px;
+      }
+      .next-button {
+        right: 20px;
+      }
+      .shinyalert-content { 
+        max-width: 600px; 
+      }
+    "))),
+    tags$script(HTML("
+      $(document).on('shiny:connected', function(event) {
+        function adjustButtonPosition() {
+          // Measure the width of the sidebar
+          // var sidebarWidth = $('.main-sidebar').width();
+          if ($('body').hasClass('sidebar-collapse')) {
+            // If the sidebar is collapsed, set the button's left margin to a minimal
+            $('.previous-button').css('left', '10px');
+          } else {
+            // If the sidebar is not collapsed, adjust according to its width
+            $('.previous-button').css('left', 250 + 'px');
+          }
+        }
+        
+        // Initial call to set the button's position correctly when the app loads
+        adjustButtonPosition();
+        
+        // Detects when the sidebar menu has been expanded or collapsed
+        $('.sidebar-toggle').click(function() {
+          // Wait briefly for sidebar transition to complete
+          setTimeout(function() {
+            adjustButtonPosition();
+          }, 500); // Adjust timing if necessary
+        });
+    
+        // Adjusts button position upon window resizing
+        $(window).resize(function() {
+          adjustButtonPosition();
+        });
+      });
+    ")),
     uiOutput("prevButtonUI"),
     uiOutput("nextButtonUI"),
     uiOutput("cheatsheetButtonUI"),
     tabItems(
+      # tabItem(tabName = "introduction",
+      #         h1("Welcome!", align = "center"),
+      #         h3("Introduction:", align = "center"),
+      #         p("Welcome to our interdisciplinary collaboration tutorial! This tutorial aims to provide researchers in the fields of digital design, marketing, and music with a user-friendly and non-technical introduction to understanding network data. By exploring the connections and dynamics within your research networks, we hope to empower you to enhance interdisciplinary collaboration and innovation within your respective domains.", style = "text-align: justify; padding: 20px;"),
+      #         p("Throughout the application, you'll come across 'Gemini Explanations' on certain pages. These explanations provide insights into the information presented on each page, utilizing Google's powerful large language model, Gemini. Think of it as Google's equivalent of ChatGPT. It's worth noting that these explanations are dynamic, meaning they change based on your input, similar to how ChatGPT's responses can change.", style = "text-align: justify; padding: 20px;"),
+      #         p("You can access a comprehensive statistical cheatsheet by simply clicking on the button provided.", style = "text-align: justify; padding: 20px;")
+      # ),
       tabItem(tabName = "introduction",
               fluidRow(
                 column(width = 12,
                        wellPanel(
-                         h1("Welcome!", align = "center"),
-                         h3("Introduction:", align = "center"),
-                         p("Welcome to our interdisciplinary collaboration tutorial! This tutorial aims to provide researchers in the fields of digital design, marketing, and music with a user-friendly and non-technical introduction to understanding network data. By exploring the connections and dynamics within your research networks, we hope to empower you to enhance interdisciplinary collaboration and innovation within your respective domains.", style = "text-align: justify; padding: 20px;"),
-                         p("You can access a comprehensive statistical cheatsheet by simply clicking on the button provided.", style = "text-align: justify; padding: 20px;")
-                       )
+                         div(style = "text-align: center;",  # Center the logo
+                             img(src = "networkhorse.png", height = "300px", alt = "NetWORKHORSE Logo")
+                         ),
+                         # h1(tags$strong("NetWORKHORSE"), align = "center"),
+                         h3(tags$strong("Your Steed in the Race for Innovation"), align = "center"),
+                         p("Welcome to NetWORKHORSE, your advanced tool for pioneering generative AI research through interdisciplinary collaboration. Tailored for researchers across diverse academic fields such as digital design, marketing, and music, NetWORKHORSE demystifies social network analysis (SNA), offering a user-friendly and non-technical introduction to understanding network data."),
+                         p("At the core of NetWORKHORSE is a dedication to enhancing your research capabilities and fostering innovative collaborations. This tool aids you in navigating through the intricate networks of academic and industry partnerships, offering insights and highlighting potential pathways for pioneering collaborative projects. Whether you are identifying key players within your network or seeking out new collaborative opportunities, NetWORKHORSE provides robust analytics and intuitive visualizations designed to simplify complex data interactions and improve your research outcomes."),
+                         tags$ul(
+                           tags$li(tags$strong("Effortless Integration: "), "Just mount and ride — NetWORKHORSE manages the intricate details of SNA, allowing you to focus on the insights."),
+                           tags$li(tags$strong("Guided Discovery: "), "You’re not navigating your research journey alone. This tool guides you step-by-step, illuminating the complexities of network data to ensure a seamless exploration experience."),
+                           tags$li(tags$strong("Powerful Analysis Made Simple: "), "Engage with dynamic and powerful analytics and visualizations that make complex data interactions comprehensible, regardless of your expertise level.")
+                         ),
+                         p("As you delve into NetWORKHORSE, you'll discover its multiple interactive tabs, each designed to enhance your research experience. Two consistent elements you'll find throughout are ", tags$strong("'Gemini Explanations'"), " and a handy ", tags$strong("'Cheatsheet'"), ". Gemini leverages Google's large language model — think of it as Google's equivalent of ChatGPT — provides you adaptive insights to enhance your understanding of the data. Tailored to your input, it supports you in making informed decisions based on sophisticated AI-generated insights. The 'Cheatsheet' offers a comprehensive overview of any statistical jargon you may encounter, accessible with a simple click on the button provided in the top-right corner."),
+                         p("Embark on your journey with NetWORKHORSE now, and transform how you engage with interdisciplinary research. This tool is here to ensure that your exploration of network dynamics is both enlightening and productive. Enjoy the ride!"),
+                         style = "text-align: justify; padding: 20px;")
                 )
               )
       ),
