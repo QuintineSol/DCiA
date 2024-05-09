@@ -361,6 +361,89 @@ find_important_actors = function(network, metric = 'Degree', n_actors = 7){
     stop('No relevant statistic selected')
   }
   res_df = data.frame(Important_Actors = important_actors, Metric_Value = values)
+  colnames(res_df) <- c('Important Actors', metric)
+  return(res_df)
+}
+
+bridge_single <- function(network, method = 'Mean', n_actors = 5, drop.inf = FALSE, filter_bridge = FALSE) {
+  network <- igraph::simplify(network)
+  
+  if (method == 'Mean') {
+    # Calculate mean distance in the graph
+    mean_distance <- igraph::mean_distance(network, directed = FALSE, weights = NA)
+    
+    #print(paste0('Original mean distance of the network is: ', mean_distance))
+    
+    changed_distances <- c()
+    visits <- c()
+    
+    for (bridge in igraph::E(network)) {
+      shiny::incProgress(amount = 1 / igraph::ecount(network))
+      temp_network <- igraph::delete.edges(network, bridge)
+      
+      if (filter_bridge && igraph::distances(temp_network, 
+                                             v = c(match(igraph::V(igraph::subgraph.edges(network, igraph::E(network)[bridge]))$name[1],
+                                                         igraph::V(network)$name)),
+                                             to = c(match(igraph::V(igraph::subgraph.edges(network, igraph::E(network)[bridge]))$name[2],
+                                                          igraph::V(network)$name)),
+                                             weights = NA)[1,1] < 3) {
+        next
+      }
+      
+      visits <- c(visits, bridge)
+      changed_distances <- c(changed_distances, igraph::mean_distance(temp_network, directed = FALSE, weights = NA))
+    }
+    
+    changed_distances <- setNames(changed_distances, apply(igraph::get.edgelist(network)[visits,], 1, paste, collapse = ' -- '))
+    
+    # if (filter_bridge) {
+    #   print('The network has', length(changed_distances), 'bridges')
+    # } else {
+    #   print('The network has', length(changed_distances), 'edges')
+    # }
+    
+    best_bridges <- names(sort(changed_distances, decreasing = TRUE)[1:n_actors])
+    dist_increase <- changed_distances[best_bridges] - mean_distance
+    
+  } else if (method == 'Absolute') {
+    changed_distances <- c()
+    
+    for (bridge in igraph::E(network)) {
+      shiny::incProgress(amount = 1 / igraph::ecount(network))
+      nodes <- igraph::V(igraph::subgraph.edges(network, igraph::E(network)[bridge]))$name 
+      node1_id <- match(nodes[1], igraph::V(network)$name)
+      node2_id <- match(nodes[2], igraph::V(network)$name)
+      temp_network <- igraph::delete.edges(network, bridge)
+      changed_distances <- c(changed_distances, igraph::distances(temp_network, v = c(node1_id), to = c(node2_id), weights = NA)[1, 1])
+    }
+    
+    changed_distances <- setNames(changed_distances, apply(igraph::get.edgelist(network)[igraph::E(network),], 1, paste, collapse = ' -- '))
+    
+    if (drop.inf) {
+      changed_distances <- subset(changed_distances, changed_distances != Inf)
+    } 
+    
+    if (filter_bridge) {
+      best_bridges <- names(sort(changed_distances[changed_distances > 2], decreasing = TRUE)[1:n_actors])
+    } else {
+      best_bridges <- names(sort(changed_distances, decreasing = TRUE)[1:n_actors])
+    }
+    
+    # if (filter_bridge) {
+    #   print('The network has', sum(changed_distances > 2), 'bridges')
+    # } else {
+    #   print('The network has', length(changed_distances), 'edges')
+    # }
+    
+    dist_increase <- changed_distances[best_bridges] - 1
+    
+  } else {
+    stop('No relevant statistic selected')
+  }
+  
+  res_df <- data.frame(cbind(best_bridges, dist_increase))
+  colnames(res_df) <- c('Important Ties', paste(method, 'distance increase'))
+  rownames(res_df) <- stringr::str_to_title(paste0(ifelse(1:n_actors == 1, '' ,paste0(english::ordinal(1:n_actors), ' ')), rep('Most important', n_actors)))
   return(res_df)
 }
 

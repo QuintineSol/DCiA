@@ -13,8 +13,8 @@ library(visNetwork)
 library(ggplot2)
 library(english)
 library(shinyalert)
-#source(paste0(dirname(rstudioapi::getSourceEditorContext()$path), '/Comparison_script.R'))
-source('Comparison_script.R')
+source(paste0(dirname(rstudioapi::getSourceEditorContext()$path), '/Comparison_script.R'))
+#source('Comparison_script.R')
 
 
 # Setting the Hugging Face API key (ensure this is securely managed in production)
@@ -189,6 +189,21 @@ ui <- dashboardPage(
                          ),
                          column(width = 8,
                                 withSpinner(DT::dataTableOutput("ActorTable"), type = 4)
+                         )
+                       ),
+                       hr(),
+                       fluidRow(
+                         column(width = 4,
+                                div(style = "background-color: #f8f8f8; border: 1px solid #ddd; padding: 16px; border-radius: 5px;",
+                                    h3("Most Important Edges"),
+                                    p("One of the most insightful pieces of information about the network is the most important edges. Importance in this context is subjective. Choose a metric below to determine the importance of edges."),
+                                ),
+                                selectInput('EdgeMetricD', 'What metric should be used to determine edge importance?', 
+                                            choices = c('Mean', 'Absolute'), selected = 'Mean'),
+                                numericInput('EdgeNumD', 'How many important edges should be retrieved?', 5, min = 1, max = NA)
+                         ),
+                         column(width = 8,
+                                withSpinner(DT::dataTableOutput("EdgeTable"), type = 4)
                          )
                        )
                 )
@@ -1537,6 +1552,17 @@ server <- function(input, output, session) {
     req(input$ActorNumD)
     g <- graph_from_data_frame(dataset(), directed = FALSE)
     find_important_actors(g, metric = input$ActorMetricD, n_actors = input$ActorNumD)
+  })
+  
+  # Retrieve the table showing the most important edges
+  output$EdgeTable <- DT::renderDataTable({
+    req(dataset())
+    req(input$EdgeMetricD)
+    req(input$EdgeNumD)
+    g <- graph_from_data_frame(dataset(), directed = FALSE)
+    
+    # Call the bridge_single function with user-selected parameters
+    bridge_single(g, method = input$EdgeMetricD, n_actors = input$EdgeNumD)
   })
   
 }
