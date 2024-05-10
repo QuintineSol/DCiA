@@ -11,8 +11,7 @@ The GitHub repository has the following structure:
 ```bash
 .
 ├── Comparison_script.R
-├── README.md
-├── Shiny_Base.R
+├── DCiA.Rproj
 ├── images
 │   ├── Internal_combination.png
 │   ├── all3_connections.png
@@ -20,12 +19,17 @@ The GitHub repository has the following structure:
 │   ├── combination.png
 │   ├── grant.png
 │   └── knowledge.png
-└── rsconnect
-    └── documents
-        └── Shiny_Base.R
-            └── shinyapps.io
-                └── apollo-dashboard
-                    └── DCiA.dcf
+├── README.md
+├── rsconnect
+│   └── documents
+│       └── Shiny_Base.R
+│           └── shinyapps.io
+│               └── apollo-dashboard
+│                   └── DCiA.dcf
+├── Shiny_Base.R
+└── www
+    ├── networkhorse.png
+    └── workhorse.png
 ```
 
 The core application is written in `Shiny_Base.R`. Within this central R file, we incorporate `Comparison_script.R` specifically within the "Compare Networks" tab.
