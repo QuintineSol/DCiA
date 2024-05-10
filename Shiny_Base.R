@@ -131,7 +131,7 @@ ui <- dashboardPage(
                   p("Pr(X>=Obs): This tells us how likely it is that the results we found are just random chance, meaning that the."),
                   p("Pr(X<=Obs): This tells us how likely it is a result we got unusual compared to what we might expect by chance. This would therefore meaning that the Observed Value is statistically significant. This suggests that there is a real and meaningful pattern in the network data."),
                   h4("Gemini Explanation"),
-                  textOutput("Gemini_cug_explanation")
+                  uiOutput("Gemini_cug_explanation")
                 )
               )
       ),
@@ -179,7 +179,7 @@ ui <- dashboardPage(
                 ),
                 withSpinner(visNetworkOutput("networkVis", height = "600px"), type = 4),
                 h4("Gemini Explanation"),
-                textOutput("Gemini_comm_explanation")
+                uiOutput("Gemini_comm_explanation")
               ),
       ),
       tabItem(tabName = 'network_comparison',
@@ -392,8 +392,11 @@ server <- function(input, output, session) {
     
     if (!is.null(cug_result) && !is.null(cug_result$obs.stat)) {
       prompt_cug <- sprintf(
-        "The Conditional Uniform Graph (CUG) test produced a statistic of %f. The probability of observing a statistic greater than or equal to this is %f, and the probability of observing a statistic less than or equal to this is %f. 
-        This information is crucial for understanding the significance of network connections in terms of network analysis and its potential impact.",
+        "The Conditional Uniform Graph (CUG) test produced a statistic of %f. 
+        The probability of observing a statistic greater than or equal to this is %f, 
+        and the probability of observing a statistic less than or equal to this is %f. 
+        This information is crucial for understanding the significance of network connections 
+        in terms of network analysis and its potential impact.",
         cug_result$obs.stat,
         cug_result$pgteobs,
         cug_result$plteobs
@@ -412,8 +415,9 @@ server <- function(input, output, session) {
   })
   
    # Render the explanation text obtained from the Hugging Face API
-  output$Gemini_cug_explanation <- renderText({
-    explanationOutput_cug()  # Use the existing reactive expression for Hugging Face explanation
+  output$Gemini_cug_explanation <- renderUI({
+    explanation_text <-  explanationOutput_cug()  # Use the reactive expression to get the explanation text
+    HTML(markdown::renderMarkdown(text = explanation_text))
   })
   
   # Render the output of the executed code
@@ -771,9 +775,12 @@ explanationOutput_comm <- eventReactive(input$runAnalysis, {
   req(analysisResult())
   modularity_val <- analysisResult()$modularity
   communities <- toString(unique(analysisResult()$memberships))
-  
+  comm_alg <- input$algorithm
+
   # Construct the prompt for Gemini
-  prompt <- sprintf("Explain the significance of a modularity score of %s and community memberships as follows: %s, in terms of network analysis and its potential impact.", modularity_val, communities)
+  prompt <- sprintf("Explain in detail the significance of a modularity score of %f and community memberships as follows: %s,
+                    in terms of network analysis and its potential impact, 
+                    note that to get the communities the %s algorithm was used", modularity_val, communities, comm_alg)
   
   # Call the Gemini function with the prompt
   generated_text <- gemini(prompt)
@@ -782,8 +789,9 @@ explanationOutput_comm <- eventReactive(input$runAnalysis, {
 })
   
   
-  output$Gemini_comm_explanation <- renderText({
-    explanationOutput_comm()
+  output$Gemini_comm_explanation <- renderUI({
+    explanation_text_comm <- explanationOutput_comm()
+    HTML(markdown::renderMarkdown(text = explanation_text_comm))
   })
   
   
