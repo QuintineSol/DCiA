@@ -13,12 +13,17 @@ library(visNetwork)
 library(ggplot2)
 library(english)
 library(shinyalert)
+library(markdown)
+
+library(gemini.R)
+
+setAPI("AIzaSyDLTNI3rcaATalpKe9q1PDbAQEAb5BGujQ") # check https://makersuite.google.com/app/apikey
 #source(paste0(dirname(rstudioapi::getSourceEditorContext()$path), '/Comparison_script.R'))
 source('Comparison_script.R')
 
 
 # Setting the Hugging Face API key (ensure this is securely managed in production)
-Sys.setenv(HUGGINGFACE_API_KEY = "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")
+#Sys.setenv(HUGGINGFACE_API_KEY = "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")
 
 # Define the User Interface
 ui <- dashboardPage(
@@ -63,11 +68,15 @@ ui <- dashboardPage(
               fluidRow(
                 column(width = 12,
                        h3("Data Upload Page", align = "center"),
+                       p("Please upload an edgelist in CSV or Excel format
+                         (.csv, .xlsx, .xls). The edgelist should represent the connections in your network, with each row indicating an edge between two nodes."),
                        fileInput('file1', 'Choose CSV/Excel File', accept = c('.csv', '.xlsx', '.xls')),
-                       DT::dataTableOutput("dataTable")  # Renders the uploaded data table
+                       DT::dataTableOutput("dataTable"),  # Renders the uploaded data table
+                       textOutput("userDatasetDescription")  # Display user's description
                 )
               )
-      ),
+      )
+      ,
       tabItem(tabName = "dashboard",
               fluidPage(
                 column(width = 12, 
@@ -205,7 +214,7 @@ ui <- dashboardPage(
                   actionButton("runCUG", "Run CUG Test"),
                   h4("CUG Test Results"),
                   withSpinner(verbatimTextOutput("cugTestOutput"), type = 4),
-                  h4("Hugging Face Explanation"),
+                  h4("Static Explanation"),
                   p("Univariate Conditional Uniform Graph Test: This means we're looking at how important individual connections are in the network."),
                   p("Conditioning Method: This tells us what part of the network we're focusing on. In this case, we're looking specifically at the connections between different nodes (researchers) in the network."),
                   p("Diagonal Used: This tells us if we're including cases where researchers are connected to themselves."),
@@ -213,8 +222,8 @@ ui <- dashboardPage(
                   p("Observed Value: This is what we actually found when we looked at the network. It tells us how important the connections are."),
                   p("Pr(X>=Obs): This tells us how likely it is that the results we found are just random chance, meaning that the."),
                   p("Pr(X<=Obs): This tells us how likely it is a result we got unusual compared to what we might expect by chance. This would therefore meaning that the Observed Value is statistically significant. This suggests that there is a real and meaningful pattern in the network data."),
-                  p(""),
-                  ("hfExplanationCUG")
+                  h4("Gemini Explanation"),
+                  uiOutput("Gemini_cug_explanation")
                 )
               )
       ),
@@ -261,8 +270,8 @@ ui <- dashboardPage(
                   p("Use the visualization tool below to explore your network as you wish. The communities are illustrated by node colour.")
                 ),
                 withSpinner(visNetworkOutput("networkVis", height = "600px"), type = 4),
-                h4("Hugging Face Explanation"),
-                textOutput("hfExplanation")
+                h4("Gemini Explanation"),
+                uiOutput("Gemini_comm_explanation")
               ),
       ),
       tabItem(tabName = 'network_comparison',
@@ -333,6 +342,7 @@ server <- function(input, output, session) {
   
   inet = reactiveVal(NULL)
   inet2 = reactiveVal(NULL)
+  user_dataset_text <- reactiveVal(NULL)  # Store user's description
   
   # Initialize The reactive variables to control when to run analysis
   shouldAnalyze <- reactiveVal(FALSE)
@@ -366,8 +376,22 @@ server <- function(input, output, session) {
       dataset(read_excel(inFile$datapath))  # Load Excel file
       inet(graph_from_data_frame(dataset(), directed = FALSE)) # Save as an igraph to save time on the conversion
     }
+    showModal(modalDialog(
+      title = "Dataset Description",
+      textInput("datasetDescription", "Please write in three sentences what this dataset is about:"),
+      easyClose = FALSE,
+      footer = tagList(
+        actionButton("confirmDescription", "Confirm"),
+        modalButton("Cancel")
+      )
+    ))
   })
   
+  observeEvent(input$confirmDescription, {
+    user_dataset_text(input$datasetDescription)
+    removeModal()
+    
+  })
   # Second data import for the second dataset in the comparison tab
   observeEvent(input$file2, {
     inFile <- input$file2
@@ -785,52 +809,45 @@ server <- function(input, output, session) {
     print(cugTest())
   })
   
-  # Render the explanation text obtained from the Hugging Face API
-  output$hfExplanationCUG <- renderText({
-    explanationOutput()  # Use the existing reactive expression for Hugging Face explanation
+  # Reactive expression to handle API call for generating explanations
+  explanationOutput_cug <- eventReactive(input$runCUG, {
+    req(input$runCUG)
+    cug_result <- cugTest()
+    
+    if (!is.null(cug_result) && !is.null(cug_result$obs.stat)) {
+      user_description <- user_dataset_text()
+      prompt_cug <- sprintf(
+        "The Conditional Uniform Graph (CUG) test produced a statistic of %f. 
+        The probability of observing a statistic greater than or equal to this is %f, 
+        and the probability of observing a statistic less than or equal to this is %f. 
+        This information is crucial for understanding the significance of network connections 
+        in terms of network analysis and its potential impact.
+        Here is more information about the dataset: %s. 
+        Make sure you explain what the CUG result entails in this particular context ",
+        cug_result$obs.stat,
+        cug_result$pgteobs,
+        cug_result$plteobs,
+        user_description
+      )
+    } else {
+      prompt_cug <- "Failed to retrieve valid results from the CUG test."
+    }
+    
+    # Call the Gemini function with the prompt, if valid
+    if (!grepl("Failed", prompt_cug)) {
+      generated_text <- gemini(prompt_cug)
+      return(generated_text)
+    } else {
+      return(prompt_cug)  # Return error message or incorrect prompt
+    }
   })
   
-  # Reactive expression to handle API call for generating explanations
-  explanationOutput <- eventReactive(input$runCode, {
-    req(input$code)  # Ensure code is entered before proceeding
-    codeToRun <- input$code
-    
-    tryCatch({
-      evalEnv <- new.env()  # New environment for code evaluation
-      evalEnv$dataset <- dataset()  # Make dataset available in the environment
-      # Capture and collapse the output of the executed code
-      result <- capture.output(eval(parse(text = codeToRun), envir = evalEnv))
-      codeOutputStr <- paste(result, collapse = "\n")
-      
-      # Construct the prompt for the API
-      prompt <- paste0("Output:\n", codeOutputStr, 
-                       "\n\nPlease provide an elaborate explanation for output and definition about network analysis and their significance in plain text elaborate.")
-      
-      # Set up API request
-      api_url <- "https://api-inference.huggingface.co/models/google/flan-t5-xxl"
-      api_key <- Sys.getenv("HUGGINGFACE_API_KEY")
-      headers <- add_headers(`Authorization` = paste("Bearer", api_key), `Content-Type` = "application/json")
-      body <- toJSON(list(inputs = prompt, parameters = list(max_new_tokens = 512)), auto_unbox = TRUE)
-      
-      # Execute the API request
-      response <- POST(url = api_url, headers, body = body)
-      content <- content(response, "parsed")
-      
-      # Process the API response
-      if (response$status_code == 200) {
-        # Assuming content structure is correct, return the first item's text
-        if (!is.null(content[[1]])) {
-          return(as.character(content[[1]]))
-        } else {
-          return("Explanation found but unable to parse.")
-        }
-      } else {
-        return(sprintf("Failed to retrieve explanation. Status code: %s, Response: %s", response$status_code, rawToChar(response$content)))
-      }
-    }, error = function(e) {
-      return(sprintf("Error: %s", e$message))
-    })
+  # Render the explanation text obtained from the gemini api
+  output$Gemini_cug_explanation <- renderUI({
+    explanation_text <-  explanationOutput_cug()  # Use the reactive expression to get the explanation text
+    HTML(markdown::renderMarkdown(text = explanation_text))
   })
+  
   
   # Render the output of the executed code
   output$codeOutput <- renderPrint({
@@ -1172,33 +1189,34 @@ server <- function(input, output, session) {
       )
   })
   
-  explanationOutput <- eventReactive(input$runAnalysis, {
+  # Reactive expression to handle API call for generating explanations using Gemini
+  explanationOutput_comm <- eventReactive(input$runAnalysis, {
     req(analysisResult())
     modularity_val <- analysisResult()$modularity
     communities <- toString(unique(analysisResult()$memberships))
+    comm_alg <- input$algorithm
+    user_description_test <- user_dataset_text()
     
-    prompt <- sprintf("Explain the significance of a modularity score of %s and community memberships as follows: %s, in terms of network analysis and its potential impact.", modularity_val, communities)
+    # Construct the prompt for Gemini
+    prompt <- sprintf("Explain in detail the significance of a modularity score of %f and community memberships as follows: %s,
+                    in terms of network analysis and its potential impact, 
+                    note that to get the communities the %s algorithm was used. 
+                      Make sure you explain what the modularity score result and 
+                      community memberships entails in this particular context: %s.
+                      ", modularity_val, communities, comm_alg, user_description_test)
     
+    # Call the Gemini function with the prompt
+    generated_text <- gemini(prompt)
     
-    # Set up API request
-    api_url <- "https://api-inference.huggingface.co/models/google/flan-t5-xxl"
-    api_key <- Sys.getenv("HUGGINGFACE_API_KEY")
-    headers <- add_headers(`Authorization` = paste("Bearer", api_key), `Content-Type` = "application/json")
-    body <- toJSON(list(inputs = prompt, parameters = list(max_new_tokens = 512)), auto_unbox = TRUE)
-    
-    response <- POST(url = api_url, body = body, config = headers)
-    content <- content(response, "parsed")
-    
-    if (response$status_code == 200) {
-      return(content$text) 
-    } else {
-      return(sprintf("Failed to retrieve explanation. Status code: %s", response$status_code))
-    }
+    return(generated_text)
   })
   
-  output$hfExplanation <- renderText({
-    explanationOutput()
+  
+  output$Gemini_comm_explanation <- renderUI({
+    explanation_text_comm <- explanationOutput_comm()
+    HTML(markdown::renderMarkdown(text = explanation_text_comm))
   })
+  
   
   
   # Activate the QAP analysis when "Run Analysis" button is clicked
