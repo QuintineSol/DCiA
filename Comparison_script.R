@@ -110,6 +110,7 @@ compare_statistics = function(network1, network2, significance_level = 0.95, sta
     ggplot2::guides(legend.position = 'right')+
     ggplot2::xlab('Degree Centrality of vertex') + ggplot2::ylab('Density')
     test = wilcox.test(degrees_1, degrees_2, alternative = 'two.sided')
+
     if (test$p.value < 1 - significance_level){
       print('There is a significant difference between the degree of both graphs')
       print(paste('p-value:', test$p.value))
@@ -180,6 +181,7 @@ if (test$p.value < 1 - significance_level){
   print('The closeness centrality of the graphs are not significantly different')
   print(paste('p-value:', test$p.value))
 }
+
   }
   return(list('degree_plot' = degree_plot, 'closeness_plot' = closeness_plot, 'betweenness_plot' = betweenness_plot))
 }
@@ -250,11 +252,11 @@ bridge_comp = function(network1, network2, method = 'Mean', net1_name, net2_name
       shiny::incProgress(amount = 1/(igraph::ecount(network1)+igraph::ecount(network2)))
       temp_network = igraph::delete.edges(network1, bridge)
       if (filter_bridge && igraph::distances(temp_network, 
-                            v = c(match(igraph::V(igraph::subgraph.edges(network1, igraph::E(network1)[bridge]))$name[1],
-                                  igraph::V(network1)$name)),
-                            to = c(match(igraph::V(igraph::subgraph.edges(network1, igraph::E(network1)[bridge]))$name[2],
-                                        igraph::V(network1)$name)),
-                            weights = NA)[1,1]<3){
+                                             v = c(match(igraph::V(igraph::subgraph.edges(network1, igraph::E(network1)[bridge]))$name[1],
+                                                         igraph::V(network1)$name)),
+                                             to = c(match(igraph::V(igraph::subgraph.edges(network1, igraph::E(network1)[bridge]))$name[2],
+                                                          igraph::V(network1)$name)),
+                                             weights = NA)[1,1]<3){
         next
       }
       visits1 = c(visits1, bridge)
@@ -348,6 +350,25 @@ bridge_comp = function(network1, network2, method = 'Mean', net1_name, net2_name
   rownames(res_df) = stringr::str_to_title(paste0(ifelse(1:n_actors == 1, '' ,paste0(english::ordinal(1:n_actors), ' ')), rep('Most important', n_actors)))
   return(res_df)
   
+}
+
+find_important_actors = function(network, metric = 'Degree', n_actors = 7){
+  if (metric == 'Closeness'){
+    igraph::E(network)$weight = 1
+    important_actors = names(sort(igraph::closeness(network), decreasing = T)[1:n_actors])
+    values = igraph::closeness(network)[important_actors]
+  } else if (metric == 'Betweenness'){
+    igraph::E(network)$weight = 1
+    important_actors = names(sort(igraph::betweenness(network), decreasing = T)[1:n_actors])
+    values = igraph::betweenness(network)[important_actors]
+  } else if (metric == 'Degree'){
+    important_actors = names(sort(igraph::degree(network), decreasing = T)[1:n_actors])
+    values = igraph::degree(network)[important_actors]
+  } else{
+    stop('No relevant statistic selected')
+  }
+  res_df = data.frame(Important_Actors = important_actors, Metric_Value = values)
+  return(res_df)
 }
 
 
