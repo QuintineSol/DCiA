@@ -10,6 +10,8 @@ library(httr)        # For HTTP requests
 library(jsonlite)    # For JSON processing
 library(igraph)      # For network analysis (not explicitly used in provided snippet but may be needed)
 library(visNetwork)
+library(intergraph)
+library(sna)
 library(ggplot2)
 library(english)
 library(shinyalert)
@@ -222,31 +224,56 @@ ui <- dashboardPage(
                   tags$li(strong('Mean degree centrality:'),'As said in the cheatsheet, this compares the mean number of ties each node in the network has. This can for instance be used to check whether an intervention has led to an increase in the number of ties across the network'),
                   tags$li(strong('Mean closeness centrality:'),'As said in the cheatsheet, this compares the mean distance each node has to all the other connected nodes. This can for instance be used to check whether an intervention has led to actors needing less people to reach each other, thus leading to a more closely connected network')
                 ),
+                p('The networks will be tested by the Mann-Whitney U Test',tags$sup('2') ,', which is a test that can be used to see whether the means of two sets of samples are statistically different. The', strong('null hypothesis'), 'for this test is that the means of the values in both networks do not significantly differ.'),
                 selectInput('statisticChoice', 'What statistics should be compared in the networks?', 
                             choices = c('Degree', 'Closeness'), multiple = T),
                 actionButton('StatCompare', 'Run Analysis'),
+                p('First, the results of the test(s) will be shown. Here the', strong('p-value'), 'can be observed and a standard p-value of 0.05 is used to make conclusions on the networks. From these', strong('p-values'), 'it can be observed whether or not the intervention had any effect, in case of the aforementioned examples.'),
+                p('For more information on', strong('p-values'), ', see the cheatsheet above, for an explanation'),
                 verbatimTextOutput('Stats'),
+                p('After this the distributions of the selected measures will be shown in graph form. From these outputs, no statistal inferences can be made. However, they often give a clearer overview on how certain distributions have changed and can form a beginning for future research as to why the values have changed in the way they did.'),
                 conditionalPanel("input.statisticChoice.includes('Degree')", withSpinner(plotOutput('degree_plot'), type = 4)),
                 conditionalPanel("input.statisticChoice.includes('Closeness')", withSpinner(plotOutput('closeness_plot'), type = 4)),
                 conditionalPanel("input.statisticChoice.includes('Betweenness')", withSpinner(plotOutput('betweenness_plot'), type = 4)),
                 h4('Most important actors in both networks:'),
+                p('One of the most insightful information about the network is are the most important actors. However, what might be more useful to see is whether these important actors change over time or change between different types of networks. For different types of networks this could mean that someone who is thought of as less important for the integrity of one network, could be devestated to lose for the connectivity of another network. Furthermore, if the most important actor changes over time, this could signal whether an intervention to better distribute the connections within the network is working or not.'),
+                p('As the definition of importance can differ based on the research question, there are multiple metrics which can be chosen as the metric of importance. These are:'),
+                tags$ul(
+                  tags$li(strong('Degree centrality:'),'As said in the cheatsheet, this uses the number of ties of each node to be able to determine the most important actors. Using this metric, the most important actors will be those who have the most connections to other and thus can be used to see whether the actor with the most connections changes between both networks.'),
+                  tags$li(strong('Betweenness centrality:'),'As said in the cheatsheet, this measures on how many shortest paths each node lies. This metric can therefore be used to be able to see whether the nodes which lie on the most shortest paths have changed. This can for instance be used to see whether the nodes with the most important broker position changed between both networks.'),
+                  tags$li(strong('Closeness centrality:'),'As said in the cheatsheet, this metric shows how close all nodes are to all other connected nodes in the network. This metric can therefore be used which nodes are the closest to all other connected nodes in the network. This comparison can thus be used to see whether the nodes which have the closest connections to all others have changed between both networks')
+                ),
+                p('This metric will then be used in both networks to be able to retrieve the most important actors. The number of actors which should be retrieved can also be specified underneath.'),
                 selectInput('ActorMetric', 'What statistic should be used to determine the most important actors?', 
                           choices = c('Degree','Closeness','Betweenness'), selected = 'betweenness'),
                 numericInput('ActorNum', 'How many actors should be retrieved', 5, min = 1, max = NA),
                 actionButton('ActorComparison', 'Run Analysis'),
+                p('Here it can be seen which actors are the most important in both networks based on the chosen metric. At first, the most important actors in each network will be presented, after which the values of the metric which they were selected upon will be shown.'),
                 verbatimTextOutput('ActorCompText'),
                 withSpinner(DT::dataTableOutput('DTActorComp'), type = 4),
                 h4('Most important ties in both networks:'),
+                p('Finally, the networks can be compared based upon the ties which they have. These ties will be ranked using either of the following two metrics:'),
+                tags$ul(
+                  tags$li(strong('Absolute method:'),'The absolute method will determine the most important ties by the distance increase between both nodes on the each of the tie. Therefore, this metric solely depends on the shortest path after the tie has been "removed", meaning that the information on the importance of the tie for other nodes in the network will be lost.'),
+                  tags$li(strong('Mean method:'),'This method will determine the most important ties based on the increase in mean distance between all the sets of nodes in the entire network. This will therefore take into account how important the tie is for other nodes, however, this might mean that ties which are important for a small collection of nodes are flooded by ties which have a smaller impact on a big group of nodes.')
+                ),
+                p('Next to these metrics, there two more choices which can be selected:'),
+                tags$ul(
+                  tags$li(strong('Only local bridges should be considered:'),'This will mean that only local bridges (ties which increase the distance between two nodes by 2 or more if removed) will be considered in the output. This mainly has effect on the mean method, as for the absolute method, this can be read directly from the obtained statistic. This option can be used if the focus should be higher on ties which have a considerable impact on the nodes surrounding a specific tie.'),
+                  tags$li(strong('Infinite values should be discarded:'),'The result of this option is very logical, whether infinite values should be considered in the output or not. These infinite values originate from ties which are the only connection between two nodes in the absolute method. These ties can however be a very important indication of where extra ties should be created, as a removal of this tie can have big consequences for the network and the real-life dynamics which arise from it.')
+                ),
                 selectInput('BridgeMetric', 'What statistic should be used to determine the most important ties?', 
                           choices = c('Absolute', 'Mean'), selected = 'mean'),
                 numericInput('BridgeNum', 'How many ties should be retrieved', 5, min = 1, max = NA),
                 checkboxGroupInput('BridgeVars', 'Extra choices', 
                                  choices = c('Only local bridges should be considered' = 'Bridges', 'Infinite values should be discarded' = 'drop.infs')),
                 actionButton('BridgeComparison', 'Run Analysis'),
+                p('Here it can be seen which ties are the most important in both networks based on the metric and other options which were chosen by the user. At first, the most important ties in each network will be presented, after which the values of the metric which they were selected upon will be shown.'),
                 verbatimTextOutput('BridgeCompText'),
                 withSpinner(DT::dataTableOutput('DTBridgeComp'), type = 4),
                 p('   '),
-                p(tags$sup('1'), 'An, W., Beauvile, R., & Rosche, B. (2022). Causal network analysis. Annual Review of Sociology, 48, 23-41.', tags$a('As seen here', href = 'https://www.annualreviews.org/docserver/fulltext/soc/48/1/annurev-soc-030320-102100.pdf?expires=1714399219&id=id&accname=guest&checksum=20AF90A77ADC63CB9E6D454E956302F1'))
+                p(tags$sup('1'), 'An, W., Beauvile, R., & Rosche, B. (2022). Causal network analysis. Annual Review of Sociology, 48, 23-41.', tags$a('As seen here', href = 'https://www.annualreviews.org/docserver/fulltext/soc/48/1/annurev-soc-030320-102100.pdf?expires=1714399219&id=id&accname=guest&checksum=20AF90A77ADC63CB9E6D454E956302F1')),
+                p(tags$sup('2'), 'For a more detailed explanation on the Mann-Whitney U test', tags$a('see the following page.', href = 'https://www.technologynetworks.com/informatics/articles/mann-whitney-u-test-assumptions-and-example-363425'))
               )
       ),
       
@@ -1200,7 +1227,6 @@ server <- function(input, output, session) {
   
   # Load the values for the statistical comparisons once the button is pressed
   Statistical_comparisons = eventReactive(input$StatCompare, {
-    req(shouldStatisticCompare())
     req(dataset())
     req(dataset2())
     if (is.null(input$statisticChoice)){
@@ -1210,6 +1236,7 @@ server <- function(input, output, session) {
                     easyClose = TRUE,
                     footer = modalButton("Got it!"))
       )
+    req(shouldStatisticCompare())
     }
     statistics = c()
     if ('Degree' %in% input$statisticChoice){
