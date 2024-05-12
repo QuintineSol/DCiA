@@ -1042,7 +1042,7 @@ server <- function(input, output, session) {
     ggplot(plot_df, aes(x = Distances, y = Category, fill = Category)) +
       geom_bar(stat = "identity") +
       scale_fill_manual(values = c("Mean Distance" = "#1bbbff", "Radius" = "#FF69B4", "Diameter" = "#A9A9A9"), name = "Category") +
-      labs(x = "Distance", y = "Category", title = "Distances Statistics") +
+      labs(x = "Distance", y = "Category", title = "Distance Statistics") +
       theme_minimal() +
       theme(
         legend.position = "top",
