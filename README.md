@@ -32,7 +32,7 @@ The GitHub repository has the following structure:
 └── Shiny_Base.R
 ```
 
-The core application is written in `Shiny_Base.R`. Within this central R file, we incorporate `Comparison_script.R` specifically within the "Compare Networks" tab.
+The core application is written in `Shiny_Base.R`. Within this central R file, we incorporate `Comparison_script.R` specifically within the "Compare Networks" and the "Explore Network" tabs.
 
 ## Access
 

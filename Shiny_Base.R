@@ -24,7 +24,14 @@ Sys.setenv(HUGGINGFACE_API_KEY = "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")
 
 # Define the User Interface
 ui <- dashboardPage(
-  dashboardHeader(title = "Apollo"),
+  dashboardHeader(
+    title = div(
+      style = "display: flex; align-items: center; max-width: 230px; padding-right: 10px;",
+      img(src = "workhorse.png", height = "30px", style = "margin-right: 5px; flex-shrink: 0;"),
+      tags$span("NetWORKHORSE", style = "font-size: 16px; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;")
+    ),
+    titleWidth = 250
+  ),
   dashboardSidebar(
     sidebarMenu(id = "sidebar",
                 menuItem("Introduction", tabName = "introduction"),
@@ -37,35 +44,107 @@ ui <- dashboardPage(
     )
   ),
   dashboardBody(
-    tags$head(
-      tags$style(HTML("
-        .previous-button { position: fixed; top: 60px; left: 250px; z-index: 1050; }
-        .cheatsheet-button { position: fixed; top: 60px; right: 100px; z-index: 750; }
-        .next-button { position: fixed; top: 60px; right: 20px; z-index: 100; }
-        .shinyalert-content { max-width: 600px; }
-      "))
-    ),
+    tags$head(tags$style(HTML("
+      .skin-blue .main-header .logo {
+        //background-color: #1E90FF;
+        //color: #FFFFFF;
+        font-size: 20px;
+        font-weight: bold;
+      }
+      .skin-blue .main-header .navbar {
+        //background-color: #1E90FF;
+      }
+      .previous-button { 
+        position: fixed; 
+        top: 55px; 
+        z-index: 1050; 
+      }
+      .cheatsheet-button, .next-button { 
+        position: fixed; 
+        top: 55px;
+        z-index: 1050; 
+      }
+      previous-button {
+        left: 250px;
+      }  
+      .cheatsheet-button {
+        right: 80px;
+      }
+      .next-button {
+        right: 20px;
+      }
+      .shinyalert-content { 
+        max-width: 600px; 
+      }
+    "))),
+    tags$script(HTML("
+      $(document).on('shiny:connected', function(event) {
+        function adjustButtonPosition() {
+          // Measure the width of the sidebar
+          // var sidebarWidth = $('.main-sidebar').width();
+          if ($('body').hasClass('sidebar-collapse')) {
+            // If the sidebar is collapsed, set the button's left margin to a minimal
+            $('.previous-button').css('left', '10px');
+          } else {
+            // If the sidebar is not collapsed, adjust according to its width
+            $('.previous-button').css('left', 250 + 'px');
+          }
+        }
+        
+        // Initial call to set the button's position correctly when the app loads
+        adjustButtonPosition();
+        
+        // Detects when the sidebar menu has been expanded or collapsed
+        $('.sidebar-toggle').click(function() {
+          // Wait briefly for sidebar transition to complete
+          setTimeout(function() {
+            adjustButtonPosition();
+          }, 500); // Adjust timing if necessary
+        });
+    
+        // Adjusts button position upon window resizing
+        $(window).resize(function() {
+          adjustButtonPosition();
+        });
+      });
+    ")),
     uiOutput("prevButtonUI"),
     uiOutput("nextButtonUI"),
     uiOutput("cheatsheetButtonUI"),
     tabItems(
+      # tabItem(tabName = "introduction",
+      #         h1("Welcome!", align = "center"),
+      #         h3("Introduction:", align = "center"),
+      #         p("Welcome to our interdisciplinary collaboration tutorial! This tutorial aims to provide researchers in the fields of digital design, marketing, and music with a user-friendly and non-technical introduction to understanding network data. By exploring the connections and dynamics within your research networks, we hope to empower you to enhance interdisciplinary collaboration and innovation within your respective domains.", style = "text-align: justify; padding: 20px;"),
+      #         p("Throughout the application, you'll come across 'Gemini Explanations' on certain pages. These explanations provide insights into the information presented on each page, utilizing Google's powerful large language model, Gemini. Think of it as Google's equivalent of ChatGPT. It's worth noting that these explanations are dynamic, meaning they change based on your input, similar to how ChatGPT's responses can change.", style = "text-align: justify; padding: 20px;"),
+      #         p("You can access a comprehensive statistical cheatsheet by simply clicking on the button provided.", style = "text-align: justify; padding: 20px;")
+      # ),
       tabItem(tabName = "introduction",
               fluidRow(
                 column(width = 12,
                        wellPanel(
-                         h1("Welcome!", align = "center"),
-                         h3("Introduction:", align = "center"),
-                         p("Welcome to our interdisciplinary collaboration tutorial! This tutorial aims to provide researchers in the fields of digital design, marketing, and music with a user-friendly and non-technical introduction to understanding network data. By exploring the connections and dynamics within your research networks, we hope to empower you to enhance interdisciplinary collaboration and innovation within your respective domains.", style = "text-align: justify; padding: 20px;"),
-                         p("Throughout the application, you'll come across 'Gemini Explanations' on certain pages. These explanations provide insights into the information presented on each page, utilizing Google's powerful large language model, Gemini. Think of it as Google's equivalent of ChatGPT. It's worth noting that these explanations are dynamic, meaning they change based on your input, similar to how ChatGPT's responses can change. Furthermore, as these explanations are generated by a Large Language Model, it should be noted that the explanations can sometimes be wrong. Thus, caution is adviced when utilising these outputs.", style = "text-align: justify; padding: 20px;"),
-                         p("You can access a comprehensive statistical cheatsheet by simply clicking on the button provided.", style = "text-align: justify; padding: 20px;")
-                       )
+                         div(style = "text-align: center;",  # Center the logo
+                             img(src = "networkhorse.png", height = "300px", alt = "NetWORKHORSE Logo")
+                         ),
+                         # h1(tags$strong("NetWORKHORSE"), align = "center"),
+                         h3(tags$strong("Your Steed in the Race for Innovation"), align = "center"),
+                         p("Welcome to NetWORKHORSE, your advanced tool for pioneering generative AI research through interdisciplinary collaboration. Tailored for researchers across diverse academic fields such as digital design, marketing, and music, NetWORKHORSE demystifies social network analysis (SNA), offering a user-friendly and non-technical introduction to understanding network data."),
+                         p("At the core of NetWORKHORSE is a dedication to enhancing your research capabilities and fostering innovative collaborations. This tool aids you in navigating through the intricate networks of academic and industry partnerships, offering insights and highlighting potential pathways for pioneering collaborative projects. Whether you are identifying key players within your network or seeking out new collaborative opportunities, NetWORKHORSE provides robust analytics and intuitive visualizations designed to simplify complex data interactions and improve your research outcomes."),
+                         tags$ul(
+                           tags$li(tags$strong("Effortless Integration: "), "Just mount and ride — NetWORKHORSE manages the intricate details of SNA, allowing you to focus on the insights."),
+                           tags$li(tags$strong("Guided Discovery: "), "You’re not navigating your research journey alone. This tool guides you step-by-step, illuminating the complexities of network data to ensure a seamless exploration experience."),
+                           tags$li(tags$strong("Powerful Analysis Made Simple: "), "Engage with dynamic and powerful analytics and visualizations that make complex data interactions comprehensible, regardless of your expertise level.")
+                         ),
+                         p("As you delve into NetWORKHORSE, you'll discover its multiple interactive tabs, each designed to enhance your research experience. Two consistent elements you'll find throughout are ", tags$strong("'Gemini Explanations'"), " and a handy ", tags$strong("'Cheatsheet'"), ". Gemini leverages Google's large language model — think of it as Google's equivalent of ChatGPT — provides you adaptive insights to enhance your understanding of the data. Tailored to your input, it supports you in making informed decisions based on sophisticated AI-generated insights. The 'Cheatsheet' offers a comprehensive overview of any statistical jargon you may encounter, accessible with a simple click on the button provided in the top-right corner."),
+                         p("Embark on your journey with NetWORKHORSE now, and transform how you engage with interdisciplinary research. This tool is here to ensure that your exploration of network dynamics is both enlightening and productive. Enjoy the ride!"),
+                         style = "text-align: justify; padding: 20px;")
                 )
               )
       ),
       tabItem(tabName = "data_upload",
               fluidRow(
                 column(width = 12,
-                       h3("Data Upload Page", align = "center"),
+                       h3("Upload Data", align = "center"),
                        fileInput('file1', 'Choose CSV/Excel File', accept = c('.csv', '.xlsx', '.xls')),
                        DT::dataTableOutput("dataTable")  # Renders the uploaded data table
                 )
@@ -75,7 +154,7 @@ ui <- dashboardPage(
               fluidPage(
                 column(width = 12, 
                        div(style = "background-color: #f8f8f8; border: 1px solid #ddd; padding: 20px; border-radius: 5px;",
-                           h3("Network Dashboard", align = "center"),
+                           h3("Explore Network", align = "center"),
                            p("Now that a network has been imported, it is time to get a better understanding of its characteristics. The current page allows for a quick and comprehensive overview of your network through a variety of statistics, findings, and visualizations. The dashboard is designed to empower the laymen that have access to network data. Getting a better understanding of the network starts with a visual inspection of its structure. Therefore, the network is displayed in the interactive visualization below.")
                        ),
                        withSpinner(visNetworkOutput("networkPlot1", height = "350px"), type = 4),
@@ -96,46 +175,54 @@ ui <- dashboardPage(
                        hr(),
                        
                        fluidRow(
-                         column(width=6,
+                         column(width = 6,
                                 div(style = "display: flex; justify-content: center;",
-                                    div(style = "width: 75%; background-color: #1bbbff; border: 1px solid #ddd; padding: 16px; border-radius: 5px; color: white;",
+                                    div(style = "width: 85%; background-color: #1bbbff; border: 1px solid #ddd; padding: 16px; border-radius: 5px; color: white;",
                                         div(style = "display: flex; align-items: center; justify-content: space-between;",
                                             h3(style = "font-size: 16px; font-weight: bold; margin: 0;", "Transitivity:"),
                                             h3(style = "font-size: 16px; font-weight: bold; margin: 0;", textOutput("transitivityOutput"))
                                         ),
-                                        column(width=9, 
+                                        column(width = 9,
                                                p(style = "font-size: 14px; margin-top: 10px; margin-bottom: 0;", "The transitivity of the network measures the likelihood of two individuals who are connected to the same person in the network are also directly connected to each other. Higher transitivity values indicate a higher tendency for actors to connected with the 'friend of a friend'."),
                                         ),
-                                        column(width=3,
-                                               div(style = "font-size: 14px; margin-top: 10px; margin-bottom: 0;", 
-                                                   p("Low: < 0.2"), 
-                                                   p("Average: 0.2 - 0.4"), 
+                                        column(width = 3,
+                                               div(style = "font-size: 14px; margin-top: 10px; margin-bottom: 0; white-space: nowrap;",
+                                                   p(style = "margin-right: 10px;", "Low: < 0.2"),
+                                                   p(style = "margin-right: 10px;", "Average: 0.2 - 0.4"),
                                                    p("High: > 0.4"),
                                                ),
-                                        )
+                                        ),
+                                        div(style="text-align:center",
+                                        column(width= 12,
+                                               tags$img(src='https://i.imgur.com/Pb2x05v.jpeg', width = '71%'), align="center")
+                                    )
                                     )
                                 )
                          ),
-                         column(width=6,
+                         column(width = 6,
                                 div(style = "display: flex; justify-content: center;",
-                                    div(style = "width: 75%; background-color: #FF69B4; border: 1px solid #ddd; padding: 16px; border-radius: 5px; color: white;",
+                                    div(style = "width: 85%; background-color: #FF69B4; border: 1px solid #ddd; padding: 16px; border-radius: 5px; color: white;",
                                         div(style = "display: flex; align-items: center; justify-content: space-between;",
                                             h3(style = "font-size: 16px; font-weight: bold; margin: 0;", "Density:"),
                                             h3(style = "font-size: 16px; font-weight: bold; margin: 0;", textOutput("densityOutput"))
-                                        ), 
-                                        column(width=9, 
+                                        ),
+                                        column(width = 9,
                                                p(style = "font-size: 14px; margin-top: 10px; margin-bottom: 0;", "Density represents the proportion of actual connections in a network relative to the total number of possible connections. It reflects the extent of the connections or interaction between individuals, with higher values indicating many collaborative opportunities. "),
                                         ),
-                                        column(width=3,
-                                               div(style = "font-size: 14px; margin-top: 10px; margin-bottom: 0;", 
-                                                   p("Low: < 0.1"), 
-                                                   p("Average: 0.1 - 0.3"), 
+                                        column(width = 3,
+                                               div(style = "font-size: 14px; margin-top: 10px; margin-bottom: 0; white-space: nowrap;",
+                                                   p(style = "margin-right: 10px;", "Low: < 0.1"),
+                                                   p(style = "margin-right: 10px;", "Average: 0.1 - 0.3"),
                                                    p("High: > 0.3"),
                                                ),
-                                        )
+                                        ),
+                                        column(width= 12,
+                                        tags$img(src='https://i.imgur.com/4D5HTL5.jpeg', width = '100%'), align="center")
                                     )
                                 )
-                         )
+                         ),
+                                
+                       
                        ),
                        hr(),
                        div(style = "background-color: #f8f8f8; border: 1px solid #ddd; padding: 16px; border-radius: 5px;",
@@ -202,7 +289,7 @@ ui <- dashboardPage(
               fluidPage(
                 column(
                   width = 12,
-                  h3("Connection Importance", align = "center"),
+                  h3("Critical Connections", align = "center"),
                   p("This page allows you to see how important certain connections are in your provided network data. It helps us identify the most important 'bridges' in our network, the ones that connect different parts of the network together."),
                   p("Imagine you have a big group of researchers and stakeholders from different fields. By using the Conditional Uniform Graph (CUG) test, you can figure out where there might be gaps in communication or places where people aren't working together as well as they could be. This helps to create better networks between researchers and stakeholders, which leads to more innovative ideas and better understanding of how generative AI can impact different industries."),
                   actionButton("runCUG", "Run CUG Test"),
@@ -223,7 +310,7 @@ ui <- dashboardPage(
       ),
       tabItem(tabName = "community_detection",
               fluidPage(
-                h3("Community Detection", align = "center"),
+                h3("Find Communities", align = "center"),
                 div(
                   p("In order to detect the communities present in your network you can make use of several different algorithms. To help you selecting the most appropriate one we have included a brief explanation of each. Here is the run-down:"),
                   tags$ul(
@@ -358,7 +445,7 @@ ui <- dashboardPage(
       
       tabItem(tabName = "data_export",
               fluidPage(
-                h3("Data Export", align = "center"),
+                h3("Export Data", align = "center"),
                 div(
                   p("Here you can download your network and communities. You can use this feature to save the current state of your network for further analysis or sharing with collaborators."),
                   downloadButton("downloadNetwork", "Network"),
@@ -1055,7 +1142,7 @@ server <- function(input, output, session) {
     ggplot(plot_df, aes(x = Counts, y = Category, fill = Category)) +
       geom_bar(stat = "identity") +
       scale_fill_manual(values = c("Edge" = "#1bbbff", "Vertex" = "#FF69B4"), name = "Category") +
-      labs(x = "Counts", y = "Category", title = "Horizontal Bar Chart - Counts") +
+      labs(x = "Counts", y = "Category", title = "Vertex and Edge Counts") +
       theme_minimal() +
       theme(
         legend.position = "top",
@@ -1084,7 +1171,7 @@ server <- function(input, output, session) {
     ggplot(plot_df, aes(x = Distances, y = Category, fill = Category)) +
       geom_bar(stat = "identity") +
       scale_fill_manual(values = c("Mean Distance" = "#1bbbff", "Radius" = "#FF69B4", "Diameter" = "#A9A9A9"), name = "Category") +
-      labs(x = "Distance", y = "Category", title = "Horizontal Bar Chart - Distances") +
+      labs(x = "Distance", y = "Category", title = "Distance Statistics") +
       theme_minimal() +
       theme(
         legend.position = "top",
@@ -1136,7 +1223,7 @@ server <- function(input, output, session) {
                                    "Eigenvector" = "#1F51FF"
       ), 
       name = "Category") +
-      labs(x = "Centralization", y = "Category", title = "Horizontal Bar Chart - Centralization") +
+      labs(x = "Centralization", y = "Category", title = "Network Centralization") +
       theme_minimal() +
       theme(
         legend.position = "top",
@@ -1570,11 +1657,11 @@ server <- function(input, output, session) {
   
   output$errorMessage <- renderText({
     if (is.null(network_object()) && is.null(community_memberships())) {
-      return("Error: No network and communities available. Please return to the 'Community Detection' tab.")
+      return("Error: No network and communities available. Please return to the 'Find Communities' tab.")
     } else if (is.null(network_object())) {
-      return("Error: No network available. Please return to the 'Community Detection' tab.")
+      return("Error: No network available. Please return to the 'Find Communities' tab.")
     } else if (is.null(community_memberships())) {
-      return("Error: No communities available. Please return to the 'Community Detection' tab.")
+      return("Error: No communities available. Please return to the 'Find Communities' tab.")
     } else {
       return(NULL)
     }
