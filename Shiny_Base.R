@@ -149,7 +149,7 @@ ui <- dashboardPage(
       tabItem(tabName = "data_upload",
               fluidRow(
                 column(width = 12,
-                       h3("Upload Datae", align = "center"),
+                       h3("Upload Data", align = "center"),
                        p("Please upload an edgelist in CSV or Excel format
                          (.csv, .xlsx, .xls). The edgelist should represent the connections in your network, with each row indicating an edge between two nodes."),
                        fileInput('file1', 'Choose CSV/Excel File', accept = c('.csv', '.xlsx', '.xls')),
