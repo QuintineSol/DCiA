@@ -142,7 +142,7 @@ ui <- dashboardPage(
       tabItem(tabName = "data_upload",
               fluidRow(
                 column(width = 12,
-                       h3("Data Upload Page", align = "center"),
+                       h3("Upload Data", align = "center"),
                        fileInput('file1', 'Choose CSV/Excel File', accept = c('.csv', '.xlsx', '.xls')),
                        DT::dataTableOutput("dataTable")  # Renders the uploaded data table
                 )
@@ -152,7 +152,7 @@ ui <- dashboardPage(
               fluidPage(
                 column(width = 12, 
                        div(style = "background-color: #f8f8f8; border: 1px solid #ddd; padding: 20px; border-radius: 5px;",
-                           h3("Network Dashboard", align = "center"),
+                           h3("Explore Network", align = "center"),
                            p("Now that a network has been imported, it is time to get a better understanding of its characteristics. The current page allows for a quick and comprehensive overview of your network through a variety of statistics, findings, and visualizations. The dashboard is designed to empower the laymen that have access to network data. Getting a better understanding of the network starts with a visual inspection of its structure. Therefore, the network is displayed in the interactive visualization below.")
                        ),
                        withSpinner(visNetworkOutput("networkPlot1", height = "350px"), type = 4),
@@ -173,46 +173,54 @@ ui <- dashboardPage(
                        hr(),
                        
                        fluidRow(
-                         column(width=6,
+                         column(width = 6,
                                 div(style = "display: flex; justify-content: center;",
-                                    div(style = "width: 75%; background-color: #1bbbff; border: 1px solid #ddd; padding: 16px; border-radius: 5px; color: white;",
+                                    div(style = "width: 85%; background-color: #1bbbff; border: 1px solid #ddd; padding: 16px; border-radius: 5px; color: white;",
                                         div(style = "display: flex; align-items: center; justify-content: space-between;",
                                             h3(style = "font-size: 16px; font-weight: bold; margin: 0;", "Transitivity:"),
                                             h3(style = "font-size: 16px; font-weight: bold; margin: 0;", textOutput("transitivityOutput"))
                                         ),
-                                        column(width=9, 
+                                        column(width = 9,
                                                p(style = "font-size: 14px; margin-top: 10px; margin-bottom: 0;", "The transitivity of the network measures the likelihood of two individuals who are connected to the same person in the network are also directly connected to each other. Higher transitivity values indicate a higher tendency for actors to connected with the 'friend of a friend'."),
                                         ),
-                                        column(width=3,
-                                               div(style = "font-size: 14px; margin-top: 10px; margin-bottom: 0;", 
-                                                   p("Low: < 0.2"), 
-                                                   p("Average: 0.2 - 0.4"), 
+                                        column(width = 3,
+                                               div(style = "font-size: 14px; margin-top: 10px; margin-bottom: 0; white-space: nowrap;",
+                                                   p(style = "margin-right: 10px;", "Low: < 0.2"),
+                                                   p(style = "margin-right: 10px;", "Average: 0.2 - 0.4"),
                                                    p("High: > 0.4"),
                                                ),
-                                        )
+                                        ),
+                                        div(style="text-align:center",
+                                        column(width= 12,
+                                               tags$img(src='https://i.imgur.com/Pb2x05v.jpeg', width = '71%'), align="center")
+                                    )
                                     )
                                 )
                          ),
-                         column(width=6,
+                         column(width = 6,
                                 div(style = "display: flex; justify-content: center;",
-                                    div(style = "width: 75%; background-color: #FF69B4; border: 1px solid #ddd; padding: 16px; border-radius: 5px; color: white;",
+                                    div(style = "width: 85%; background-color: #FF69B4; border: 1px solid #ddd; padding: 16px; border-radius: 5px; color: white;",
                                         div(style = "display: flex; align-items: center; justify-content: space-between;",
                                             h3(style = "font-size: 16px; font-weight: bold; margin: 0;", "Density:"),
                                             h3(style = "font-size: 16px; font-weight: bold; margin: 0;", textOutput("densityOutput"))
-                                        ), 
-                                        column(width=9, 
+                                        ),
+                                        column(width = 9,
                                                p(style = "font-size: 14px; margin-top: 10px; margin-bottom: 0;", "Density represents the proportion of actual connections in a network relative to the total number of possible connections. It reflects the extent of the connections or interaction between individuals, with higher values indicating many collaborative opportunities. "),
                                         ),
-                                        column(width=3,
-                                               div(style = "font-size: 14px; margin-top: 10px; margin-bottom: 0;", 
-                                                   p("Low: < 0.1"), 
-                                                   p("Average: 0.1 - 0.3"), 
+                                        column(width = 3,
+                                               div(style = "font-size: 14px; margin-top: 10px; margin-bottom: 0; white-space: nowrap;",
+                                                   p(style = "margin-right: 10px;", "Low: < 0.1"),
+                                                   p(style = "margin-right: 10px;", "Average: 0.1 - 0.3"),
                                                    p("High: > 0.3"),
                                                ),
-                                        )
+                                        ),
+                                        column(width= 12,
+                                        tags$img(src='https://i.imgur.com/4D5HTL5.jpeg', width = '100%'), align="center")
                                     )
                                 )
-                         )
+                         ),
+                                
+                       
                        ),
                        hr(),
                        div(style = "background-color: #f8f8f8; border: 1px solid #ddd; padding: 16px; border-radius: 5px;",
@@ -279,7 +287,7 @@ ui <- dashboardPage(
               fluidPage(
                 column(
                   width = 12,
-                  h3("Connection Importance", align = "center"),
+                  h3("Critical Connections", align = "center"),
                   p("This page allows you to see how important certain connections are in your provided network data. It helps us identify the most important 'bridges' in our network, the ones that connect different parts of the network together."),
                   p("Imagine you have a big group of researchers and stakeholders from different fields. By using the Conditional Uniform Graph (CUG) test, you can figure out where there might be gaps in communication or places where people aren't working together as well as they could be. This helps to create better networks between researchers and stakeholders, which leads to more innovative ideas and better understanding of how generative AI can impact different industries."),
                   actionButton("runCUG", "Run CUG Test"),
@@ -300,7 +308,7 @@ ui <- dashboardPage(
       ),
       tabItem(tabName = "community_detection",
               fluidPage(
-                h3("Community Detection", align = "center"),
+                h3("Find Communities", align = "center"),
                 div(
                   p("In order to detect the communities present in your network you can make use of several different algorithms. To help you selecting the most appropriate one we have included a brief explanation of each. Here is the run-down:"),
                   tags$ul(
@@ -347,7 +355,7 @@ ui <- dashboardPage(
       ),
       tabItem(tabName = 'network_comparison',
               fluidPage(
-                h3("Network comaprison Page", align = "center"),
+                h3("Compare Networks", align = "center"),
                 p('This tab will be focused on the comparison of two different networks, thus, please Upload a second network to compare to'),
                 fileInput('file2', 'Choose CSV/Excel File', accept = c('.csv', '.xlsx', '.xls')),
                 DT::dataTableOutput("dataTable2"),  # Renders the uploaded data table
@@ -388,7 +396,7 @@ ui <- dashboardPage(
       
       tabItem(tabName = "data_export",
               fluidPage(
-                h3("Data Export", align = "center"),
+                h3("Export Data", align = "center"),
                 div(
                   p("Here you can download your network and communities. You can use this feature to save the current state of your network for further analysis or sharing with collaborators."),
                   downloadButton("downloadNetwork", "Network"),
@@ -1085,7 +1093,7 @@ server <- function(input, output, session) {
     ggplot(plot_df, aes(x = Counts, y = Category, fill = Category)) +
       geom_bar(stat = "identity") +
       scale_fill_manual(values = c("Edge" = "#1bbbff", "Vertex" = "#FF69B4"), name = "Category") +
-      labs(x = "Counts", y = "Category", title = "Horizontal Bar Chart - Counts") +
+      labs(x = "Counts", y = "Category", title = "Vertex and Edge Counts") +
       theme_minimal() +
       theme(
         legend.position = "top",
@@ -1114,7 +1122,7 @@ server <- function(input, output, session) {
     ggplot(plot_df, aes(x = Distances, y = Category, fill = Category)) +
       geom_bar(stat = "identity") +
       scale_fill_manual(values = c("Mean Distance" = "#1bbbff", "Radius" = "#FF69B4", "Diameter" = "#A9A9A9"), name = "Category") +
-      labs(x = "Distance", y = "Category", title = "Horizontal Bar Chart - Distances") +
+      labs(x = "Distance", y = "Category", title = "Distance Statistics") +
       theme_minimal() +
       theme(
         legend.position = "top",
@@ -1166,7 +1174,7 @@ server <- function(input, output, session) {
                                    "Eigenvector" = "#1F51FF"
       ), 
       name = "Category") +
-      labs(x = "Centralization", y = "Category", title = "Horizontal Bar Chart - Centralization") +
+      labs(x = "Centralization", y = "Category", title = "Network Centralization") +
       theme_minimal() +
       theme(
         legend.position = "top",
@@ -1600,11 +1608,11 @@ server <- function(input, output, session) {
   
   output$errorMessage <- renderText({
     if (is.null(network_object()) && is.null(community_memberships())) {
-      return("Error: No network and communities available. Please return to the 'Community Detection' tab.")
+      return("Error: No network and communities available. Please return to the 'Find Communities' tab.")
     } else if (is.null(network_object())) {
-      return("Error: No network available. Please return to the 'Community Detection' tab.")
+      return("Error: No network available. Please return to the 'Find Communities' tab.")
     } else if (is.null(community_memberships())) {
-      return("Error: No communities available. Please return to the 'Community Detection' tab.")
+      return("Error: No communities available. Please return to the 'Find Communities' tab.")
     } else {
       return(NULL)
     }
