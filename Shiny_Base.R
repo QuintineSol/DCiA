@@ -1020,7 +1020,7 @@ server <- function(input, output, session) {
     ggplot(plot_df, aes(x = Counts, y = Category, fill = Category)) +
       geom_bar(stat = "identity") +
       scale_fill_manual(values = c("Edge" = "#1bbbff", "Vertex" = "#FF69B4"), name = "Category") +
-      labs(x = "Counts", y = "Category", title = "Horizontal Bar Chart - Counts") +
+      labs(x = "Counts", y = "Category", title = "Vertex and Edge Counts") +
       theme_minimal() +
       theme(
         legend.position = "top",
@@ -1049,7 +1049,7 @@ server <- function(input, output, session) {
     ggplot(plot_df, aes(x = Distances, y = Category, fill = Category)) +
       geom_bar(stat = "identity") +
       scale_fill_manual(values = c("Mean Distance" = "#1bbbff", "Radius" = "#FF69B4", "Diameter" = "#A9A9A9"), name = "Category") +
-      labs(x = "Distance", y = "Category", title = "Horizontal Bar Chart - Distances") +
+      labs(x = "Distance", y = "Category", title = "Distance Statistics") +
       theme_minimal() +
       theme(
         legend.position = "top",
@@ -1101,7 +1101,7 @@ server <- function(input, output, session) {
                                    "Eigenvector" = "#1F51FF"
       ), 
       name = "Category") +
-      labs(x = "Centralization", y = "Category", title = "Horizontal Bar Chart - Centralization") +
+      labs(x = "Centralization", y = "Category", title = "Network Centralization") +
       theme_minimal() +
       theme(
         legend.position = "top",
