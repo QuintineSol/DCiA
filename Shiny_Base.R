@@ -655,7 +655,15 @@ server <- function(input, output, session) {
           <p><b>Local Bridges:</b> Local bridges are connections between nodes that bridge different communities in the network, facilitating communication between them.</p>
           
           <h3>Conditional Uniform Graph (CUG) Test</h3>
-          <p><b>CUG Test:</b> The CUG test evaluates the importance of connections in a network, identifying critical connections that bridge different parts of the network.</p>
+          <p><b>CUG Test:</b> The CUG test evaluates the importance of connections in a network, identifying whether there are any critical connections that bridge different parts of the network.</p>
+          <p> &nbsp; </p>
+          <p>The model does this by repeatedly creating random networks with the same number of nodes and number of edges, after which the important connections in these networks will be evaluated using the <b>Betweenness Centralization</b>, which shows how much the network deviates from the highest possible summed betweenness centrality values.</p>
+          <p> &nbsp; </p>
+          <p>Finally, the model will calculate this <b>Betweenness Centralization</b> for the network which was put into the model. The output value of this statistic will then be compared with the values in all of the simulated networks, after which the p-values will be based on the percentage of simulated networks which had smaller value and the percentage of simulated networks which showed a larger value for the <b>Betweenness Centralization</b>. The p-values can be interpreted in the following way:</p>
+          <ul>
+              <li> If we want to test whether there are <b>significantly more</b> important ties than in the random networks, we will use the proportion of random observations which were <b>smaller</b> than the observed value as the p-value </li>
+              <li> If we want to test whether there are <b>significantly less</b> important ties than in the random networks, we will use the proportion of random observations which were <b>bigger</b> than the observed value as the p-value</li>
+          </ul>
         
           <h3>QAP Test</h3>
           <p><b>QAP Test:</b> The QAP test compares a chosen network statistic between two different networks while controlling for dependencies among observations, helping to assess the similarity or difference between networks.</p>
