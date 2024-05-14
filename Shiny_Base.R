@@ -371,6 +371,7 @@ ui <- dashboardPage(
                 # Add requirements based on import
                 fileInput('file2', 'Choose CSV/Excel File', accept = c('.csv', '.xlsx', '.xls')),
                 DT::dataTableOutput("dataTable2"),  # Renders the uploaded data table
+                textOutput("userDatasetDescription_2"),  # Display user's description
                 h4('Correlation between the networks'),
                 p('The correlation between both networks will be computed using the ',strong('QAP method'),', as explained in the Cheatsheet. Before this is performed the function makes sure that the nodes in both of the networks match by adding missing nodes as isolates to the other network.'),
                 p('Therefore, the number of repetitions of scrambled networks which are done in the simulation is a very important metric, as this determines how good the results represent the actual situation. These repetitions come with a trade-off in the time it takes before the model is completed, which is highly dependent on the size and complexity of each network. Thus, the exact optimal value differs for each network. Therefore, it is advised to start with a lower number, like 100, and build up slowly such that the best balance between execution time and accuracy can be found.'),
@@ -393,6 +394,8 @@ ui <- dashboardPage(
                   tags$li('The test statistic is', strong('not significantly different'), 'from the random observations: In this case there no correlation between the networks, thus, the networks are unlikely to effect each other')
                 ),
                 p('These results come with the caveat that correlation does not mean causation, meaning that if two networks are correlated, it does not directly mean that the ties in one network are the causes for ties in the other network. To be able to establish this, more research should be done based on the methodologies presented in An, et al. (2022)', tags$sup('1')),
+                h4("Gemini Explanation"),
+                uiOutput("Gemini_qap_explanation"),
                 h4('Statistical differences between the networks'),
                 p('There are 2 different network measures which currently can be compared across both networks:'),
                 tags$ul(
@@ -410,6 +413,11 @@ ui <- dashboardPage(
                 conditionalPanel("input.statisticChoice.includes('Degree')", withSpinner(plotOutput('degree_plot'), type = 4)),
                 conditionalPanel("input.statisticChoice.includes('Closeness')", withSpinner(plotOutput('closeness_plot'), type = 4)),
                 conditionalPanel("input.statisticChoice.includes('Betweenness')", withSpinner(plotOutput('betweenness_plot'), type = 4)),
+            #wwwww  Gemini_Utest_Close_explanation
+                conditionalPanel("input.statisticChoice.includes('Degree')", h4("Gemini Explanation for Degree Comparison")),
+                conditionalPanel("input.statisticChoice.includes('Degree')", uiOutput("Gemini_Utest_DEGREE_explanation")),
+                conditionalPanel("input.statisticChoice.includes('Closeness')", h4("Gemini Explanation for Closeness Comparison")),
+                conditionalPanel("input.statisticChoice.includes('Closeness')", uiOutput("Gemini_Utest_Close_explanation")),
                 h4('Most important actors in both networks:'),
                 p('One of the most insightful information about the network is are the most important actors. However, what might be more useful to see is whether these important actors change over time or change between different types of networks. For different types of networks this could mean that someone who is thought of as less important for the integrity of one network, could be devestated to lose for the connectivity of another network. Furthermore, if the most important actor changes over time, this could signal whether an intervention to better distribute the connections within the network is working or not.'),
                 p('As the definition of importance can differ based on the research question, there are multiple metrics which can be chosen as the metric of importance. These are:'),
@@ -426,6 +434,11 @@ ui <- dashboardPage(
                 p('Here it can be seen which actors are the most important in both networks based on the chosen metric. At first, the most important actors in each network will be presented, after which the values of the metric which they were selected upon will be shown.'),
                 verbatimTextOutput('ActorCompText'),
                 withSpinner(DT::dataTableOutput('DTActorComp'), type = 4),
+
+                # conditionalPanel("input.statisticChoice.includes('Degree')", 
+                #                  h4("Gemini Explanation for most important actors using Degree")),
+                # conditionalPanel("input.statisticChoice.includes('Degree')", 
+                #                  uiOutput("Gemini_Actors_DEGREE_explanation")),
                 h4('Most important ties in both networks:'),
                 p('Finally, the networks can be compared based upon the ties which they have. These ties will be ranked using either of the following two metrics:'),
                 tags$ul(
@@ -479,7 +492,8 @@ server <- function(input, output, session) {
   
   inet = reactiveVal(NULL)
   inet2 = reactiveVal(NULL)
-  user_dataset_text <- reactiveVal(NULL)  # Store user's description
+  user_dataset_text <- reactiveVal(NULL)
+  user_dataset_text_2 <- reactiveVal(NULL) # Store user's description
   
   # Initialize The reactive variables to control when to run analysis
   shouldAnalyze <- reactiveVal(FALSE)
@@ -539,6 +553,21 @@ server <- function(input, output, session) {
       dataset2(read_excel(inFile$datapath))  # Load Excel file
       inet2(graph_from_data_frame(dataset2(), directed = FALSE))
     }
+    showModal(modalDialog(
+      title = "Dataset Description",
+      textInput("datasetDescription_2", "Please write in three sentences what this dataset is about:"),
+      easyClose = FALSE,
+      footer = tagList(
+        actionButton("confirmDescription", "Confirm"),
+        modalButton("Cancel")
+      )
+    ))
+  })
+  
+  observeEvent(input$confirmDescription, {
+    user_dataset_text_2(input$datasetDescription_2)
+    removeModal()
+    
   })
   
   # Reactively reset shouldAnalyze when algorithm changes
@@ -1380,12 +1409,57 @@ server <- function(input, output, session) {
   output$QAP = renderPrint({
     req(QAP_test())
     QAP_test()
+    
   })
   
   # Plot the output of the QAP test
   output$QAPplot = renderPlot({
     req(QAP_test())
     sna::plot.qaptest(QAP_test())
+  })
+  
+  # Reactive expression to handle API call for generating explanations
+  explanationOutput_qap <- eventReactive(input$QAPAnalysis, {
+    req(QAP_test())
+    qap_result <- QAP_test()
+    print(qap_result)
+    print(qap_result$testval)
+    
+    if (!is.null(qap_result) && !is.null(qap_result$testval)) {
+      user_description_test <- user_dataset_text()
+      user_description_2 <- user_dataset_text_2()
+      prompt_qap <- sprintf(
+        "The Quadratic Assignment Procedure (QAP) test produced a statistic of %f. 
+        The probability of observing a statistic greater than or equal to this is %f, 
+        and the probability of observing a statistic less than or equal to this is %f. 
+        This information is crucial for understanding the correlation between the two networks 
+        in terms of network analysis and its potential impact.
+        Here is more information about the first dataset: %s. 
+        Here is more information about the second dataset: %s. 
+        Make sure you explain what the QAP result entails in this particular context ",
+        qap_result$testval,
+        qap_result$pgreq,
+        qap_result$pleeq,
+        user_description_test,
+        user_description_2
+      )
+    } else {
+      prompt_qap <- "Failed to retrieve valid results from the QAP test."
+    }
+    
+    # Call the Gemini function with the prompt, if valid
+    if (!grepl("Failed", prompt_qap)) {
+      generated_text <- gemini(prompt_qap)
+      return(generated_text)
+    } else {
+      return(prompt_qap)  # Return error message or incorrect prompt
+    }
+  })
+  
+  # Render the explanation text obtained from the gemini api
+  output$Gemini_qap_explanation <- renderUI({
+    explanation_text_qap <-  explanationOutput_qap()  # Use the reactive expression to get the explanation text
+    HTML(markdown::renderMarkdown(text = explanation_text_qap))
   })
   
   # If the statistic for the statistical comparison changes, stop the constant analysis
@@ -1430,7 +1504,7 @@ server <- function(input, output, session) {
     }
     g1 <- inet()
     g2 <- inet2()
-    stats = compare_statistics(g1, g2, statistics = statistics,
+    compare_statistics(g1, g2, statistics = statistics,
                                net1_name = gsub("\\.\\w+$", "", input$file1$name),
                                net2_name = gsub("\\.\\w+$", "", input$file2$name))
   })
@@ -1439,6 +1513,7 @@ server <- function(input, output, session) {
   output$Stats = renderPrint({
     req(Statistical_comparisons())
     Statistical_comparisons()
+    i=1
   })
   
   # Retrieve the plot showing the density of the degrees in both networks
@@ -1504,6 +1579,117 @@ server <- function(input, output, session) {
     print(betweenness_plot())
   })
   
+  #qqqqqq
+  
+  # Reactive expression to handle API call for generating explanations
+  explanationOutput_deg <- eventReactive(input$StatCompare, {
+    print(Statistical_comparisons())
+    req(Statistical_comparisons())
+    print(Statistical_comparisons())
+    utest <- Statistical_comparisons()
+    degree_dataset_1 = utest$degree_output$mean_net1
+    degree_dataset_2 = utest$degree_output$mean_net2
+    p_val_deg = utest$degree_output$p.value
+    # close_dataset_1 = utest$closeness_output$mean_net1
+    # close_dataset_2 = utest$closeness_output$mean_net2
+    # p_val_close = utest$closeness_output$p.value
+    
+    choice_user = input$statisticChoice
+    print("almost")
+    if (!is.null(choice_user)) {
+      print("made it")
+      user_description_test <- user_dataset_text()
+      user_description_2 <- user_dataset_text_2()
+      prompt_deg <- sprintf(
+        "The Mean degree centrality for dataset 1 is %f. 
+        The Mean degree centrality for dataset 2 is %f, 
+        and the p-value is %f. 
+        This can for instance be used to check whether an intervention has led to 
+        an increase in the number of ties across the network.
+        Here is more information about the first dataset: %s. 
+        Here is more information about the second dataset: %s. 
+        Make sure you elaborately explain what the result entails in this particular context ",
+        degree_dataset_1,
+        degree_dataset_2,
+        p_val_deg,
+        user_description_test,
+        user_description_2
+      )
+    } else {
+      prompt_deg <- "Failed to retrieve valid results from the QAP test."
+    }
+    
+    # Call the Gemini function with the prompt, if valid
+    if (!grepl("Failed", prompt_deg)) {
+      generated_text <- gemini(prompt_deg)
+      return(generated_text)
+    } else {
+      return(prompt_deg)  # Return error message or incorrect prompt
+    }
+  })
+  
+  # Render the explanation text obtained from the gemini api
+  output$Gemini_Utest_DEGREE_explanation <- renderUI({
+    explanation_text_deg <-  explanationOutput_deg()  # Use the reactive expression to get the explanation text
+    HTML(markdown::renderMarkdown(text = explanation_text_deg))
+  })
+  
+  
+  #########
+  
+  # Reactive expression to handle API call for generating explanations
+  explanationOutput_close <- eventReactive(input$StatCompare, {
+    print(Statistical_comparisons())
+    req(Statistical_comparisons())
+    print(Statistical_comparisons())
+    utest <- Statistical_comparisons()
+    
+    close_dataset_1 = utest$closeness_output$mean_net1
+    close_dataset_2 = utest$closeness_output$mean_net2
+    p_val_close = utest$closeness_output$p.value
+    
+    choice_user = input$statisticChoice
+    print("almost")
+    if (!is.null(choice_user)) {
+      print("made it")
+      user_description_test <- user_dataset_text()
+      user_description_2 <- user_dataset_text_2()
+      prompt_close <- sprintf(
+        "The Mean closeness centrality for dataset 1 is %f. 
+        The Mean closeness centrality for dataset 2 is %f, 
+        and the p-value is %f. 
+        This can for instance be used to check whether an intervention has led 
+        to actors needing less people to reach each other, 
+        thus leading to a more closely connected network.
+        Here is more information about the first dataset: %s. 
+        Here is more information about the second dataset: %s. 
+        Make sure you elaborately explain what the result entails in this particular context ",
+        close_dataset_1,
+        close_dataset_2,
+        p_val_close,
+        user_description_test,
+        user_description_2
+      )
+    } else {
+      prompt_close <- "Failed to retrieve valid results from the mean closeness centrality test."
+    }
+    
+    # Call the Gemini function with the prompt, if valid
+    if (!grepl("Failed", prompt_close)) {
+      generated_text <- gemini(prompt_close)
+      return(generated_text)
+    } else {
+      return(prompt_close)  # Return error message or incorrect prompt
+    }
+  })
+  
+  # Render the explanation text obtained from the gemini api
+  output$Gemini_Utest_Close_explanation <- renderUI({
+    explanation_text_close <-  explanationOutput_close()  # Use the reactive expression to get the explanation text
+    HTML(markdown::renderMarkdown(text = explanation_text_close))
+  })
+  
+  
   # When the metric for the actor comparison changes set the compare to FALSE
   observe({
     input$ActorMetric
@@ -1559,6 +1745,65 @@ server <- function(input, output, session) {
     actor_df()
   }
   )
+  
+  
+  
+  # #mmmmmm
+  # #Gemini_Actors_DEGREE_explanation
+  # explanationOutput_degree_actor <- eventReactive(input$ActorComparison, {
+  #   print(actor_df())
+  #   req(Statistical_comparisons())
+  #   print(Statistical_comparisons())
+  #   utest <- Statistical_comparisons()
+  #   
+  #   close_dataset_1 = utest$closeness_output$mean_net1
+  #   close_dataset_2 = utest$closeness_output$mean_net2
+  #   p_val_close = utest$closeness_output$p.value
+  #   
+  #   choice_user = input$statisticChoice
+  #   print("almost")
+  #   if (!is.null(choice_user)) {
+  #     print("made it")
+  #     user_description_test <- user_dataset_text()
+  #     user_description_2 <- user_dataset_text_2()
+  #     prompt_degree_act <- sprintf(
+  #       "The Mean closeness centrality for dataset 1 is %f. 
+  #       The Mean closeness centrality for dataset 2 is %f, 
+  #       and the p-value is %f. 
+  #       This can for instance be used to check whether an intervention has led 
+  #       to actors needing less people to reach each other, 
+  #       thus leading to a more closely connected network.
+  #       Here is more information about the first dataset: %s. 
+  #       Here is more information about the second dataset: %s. 
+  #       Make sure you elaborately explain what the result entails in this particular context ",
+  #       close_dataset_1,
+  #       close_dataset_2,
+  #       p_val_close,
+  #       user_description_test,
+  #       user_description_2
+  #     )
+  #   } else {
+  #     prompt_degree_act <- "Failed to retrieve valid results from the Degree centrality test."
+  #   }
+  #   
+  #   # Call the Gemini function with the prompt, if valid
+  #   if (!grepl("Failed", prompt_degree_act)) {
+  #     generated_text <- gemini(prompt_degree_act)
+  #     return(generated_text)
+  #   } else {
+  #     return(prompt_degree_act)  # Return error message or incorrect prompt
+  #   }
+  # })
+  # 
+  # # Render the explanation text obtained from the gemini api
+  # output$Gemini_Actors_DEGREE_explanation <- renderUI({
+  #   explanation_text_degree_act <-  explanationOutput_degree_actor()  # Use the reactive expression to get the explanation text
+  #   HTML(markdown::renderMarkdown(text = explanation_text_degree_act))
+  # })
+  # 
+  # 
+  # 
+  
   
   # When the metric for the bridge comparison changes set the compare to FALSE
   observe({

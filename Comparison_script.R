@@ -95,6 +95,8 @@ compare_statistics = function(network1, network2, significance_level = 0.95, sta
   closeness_plot = NULL
   degree_plot = NULL
   betweenness_plot = NULL
+  deg_output=NULL
+  clo_output = NULL
   if (isTRUE(statistics['Degree'])){
     degrees_1 = igraph::degree(network1)
     print(paste('The average degree of', net1_name,' is:', mean(degrees_1)))
@@ -110,6 +112,7 @@ compare_statistics = function(network1, network2, significance_level = 0.95, sta
     ggplot2::guides(legend.position = 'right')+
     ggplot2::xlab('Degree Centrality of vertex') + ggplot2::ylab('Density')
     test = wilcox.test(degrees_1, degrees_2, alternative = 'two.sided')
+    deg_output = c(test, 'mean_net1' = mean(degrees_1),'mean_net2' = mean(degrees_2))
 
     if (test$p.value < 1 - significance_level){
       print('There is a significant difference between the degree of both graphs')
@@ -169,6 +172,7 @@ compare_statistics = function(network1, network2, significance_level = 0.95, sta
     ggplot2::coord_cartesian(xlim = c(0, 1))+ ggplot2::ggtitle('Distribution and means of vertex closeness centrality values')+ggplot2::theme(legend.position="right", plot.title = ggplot2::element_text(hjust = 0.5, face = "bold"))+
       ggplot2::xlab('Closeness Centrality of vertex') + ggplot2::ylab('Density')
 test = wilcox.test(degrees_1, degrees_2, alternative = 'two.sided')
+clo_output = c(test, 'mean_net1' = mean(degrees_1),'mean_net2' = mean(degrees_2))
 if (test$p.value < 1 - significance_level){
   print('There is a significant difference between the degree of both graphs')
   print(paste('p-value:', test$p.value))
@@ -183,7 +187,7 @@ if (test$p.value < 1 - significance_level){
 }
 
   }
-  return(list('degree_plot' = degree_plot, 'closeness_plot' = closeness_plot, 'betweenness_plot' = betweenness_plot))
+  return(list('degree_plot' = degree_plot, 'closeness_plot' = closeness_plot, 'betweenness_plot' = betweenness_plot, 'degree_output' = deg_output, 'closeness_output' = clo_output))
 }
 
 
