@@ -29,6 +29,7 @@ source('Comparison_script.R')
 
 # Define the User Interface
 ui <- dashboardPage(
+  title = "NetWORKHORSE",
   dashboardHeader(
     title = div(
       style = "display: flex; align-items: center; max-width: 230px; padding-right: 10px;",
