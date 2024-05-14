@@ -367,7 +367,7 @@ ui <- dashboardPage(
       ),
       tabItem(tabName = 'network_comparison',
               fluidPage(
-                h3("Network comaprison Page", align = "center"),
+                h3("Network Comparison Page", align = "center"),
                 p('This tab will be focused on the comparison of two different networks, thus, please upload a second network to compare to. This network should meet the following requirements:'),
                 # Add requirements based on import
                 fileInput('file2', 'Choose CSV/Excel File', accept = c('.csv', '.xlsx', '.xls')),
