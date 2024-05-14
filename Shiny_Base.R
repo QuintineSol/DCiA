@@ -404,7 +404,7 @@ ui <- dashboardPage(
                 selectInput('statisticChoice', 'What statistics should be compared in the networks?', 
                             choices = c('Degree', 'Closeness'), multiple = T),
                 actionButton('StatCompare', 'Run Analysis'),
-                p('First, the results of the test(s) will be shown. Here the', strong('p-value'), 'can be observed and a standard p-value of 0.05 is used to make conclusions on the networks. From these', strong('p-values'), 'it can be observed whether or not the intervention had any effect, in case of the aforementioned examples.'),
+                p('First, the results of the test(s) will be shown. Here the', strong('p-value'), 'can be observed and a standard significance level of 0.05 is used to make conclusions on the networks. From these', strong('p-values'), 'it can be observed whether or not the intervention had any effect, in case of the aforementioned examples.'),
                 p('For more information on', strong('p-values'), ', see the cheatsheet above, for an explanation'),
                 verbatimTextOutput('Stats'),
                 p('After this the distributions of the selected measures will be shown in graph form. From these outputs, no statistal inferences can be made. However, they often give a clearer overview on how certain distributions have changed and can form a beginning for future research as to why the values have changed in the way they did.'),
