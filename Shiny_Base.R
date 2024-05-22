@@ -311,7 +311,7 @@ ui <- dashboardPage(
                   p("Diagonal Used: This tells us if we're including cases where researchers are connected to themselves."),
                   p("Replications: This just says how many times we repeated the test to make sure our results are reliable."),
                   p("Observed Value: This is what we actually found when we looked at the network. It tells us how important the connections are."),
-                  p("Pr(X>=Obs): This tells us how likely it is that the results we found are just random chance, meaning that the."),
+                  p("Pr(X>=Obs): This tells us how likely it is that the results we found are just random chance, meaning that there are less important connections than expected from a randomly generated network. Thus, if this is high, there are little to no important connections within the network."),
                   p("Pr(X<=Obs): This tells us how likely it is a result we got unusual compared to what we might expect by chance. This would therefore meaning that the Observed Value is statistically significant. This suggests that there is a real and meaningful pattern in the network data."),
                   h4("Gemini Explanation"),
                   uiOutput("Gemini_cug_explanation")
