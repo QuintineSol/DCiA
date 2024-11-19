@@ -19,7 +19,7 @@ library(markdown)
 
 library(gemini.R)
 
-setAPI("AIzaSyDLTNI3rcaATalpKe9q1PDbAQEAb5BGujQ") # check https://makersuite.google.com/app/apikey
+setAPI("XXX) # check https://makersuite.google.com/app/apikey
 #source(paste0(dirname(rstudioapi::getSourceEditorContext()$path), '/Comparison_script.R'))
 source('Comparison_script.R')
 
